@@ -1,0 +1,81 @@
+/*
+ * @Author: czy0729
+ * @Date: 2019-06-23 22:20:57
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-03-22 06:35:08
+ */
+import React, { useCallback, useMemo } from 'react'
+import { Animated, View } from 'react-native'
+import { observer } from 'mobx-react'
+import { Component } from '@components'
+import { useStore } from '@stores'
+import { ANDROID, SCROLL_VIEW_RESET_PROPS, USE_NATIVE_DRIVER } from '@constants'
+import { TAB_PAGE } from '../../ds'
+import Lock from '../lock'
+import Content from './content'
+import Service from './service'
+import { COMPONENT } from './ds'
+import { memoStyles } from './styles'
+
+import type { Props } from './types'
+import type { Ctx } from '../../types'
+
+function About({ onScroll }: Props) {
+  const { $ } = useStore<Ctx>(COMPONENT)
+
+  /** iOS 才需要 scroll 事件 */
+  const handleScrollEvent = useMemo(() => {
+    if (ANDROID) return undefined
+
+    return Animated.event(
+      [
+        {
+          nativeEvent: {
+            contentOffset: {
+              y: $.scrollY
+            }
+          }
+        }
+      ],
+      {
+        useNativeDriver: USE_NATIVE_DRIVER,
+        listener: onScroll
+      }
+    )
+  }, [$, onScroll])
+
+  /** iOS 才需要 ref 转发 */
+  const handleRef = useCallback(
+    (ref: any) => {
+      if (ANDROID) return
+
+      $.forwardRef(
+        ref,
+        TAB_PAGE.about
+      )
+    },
+    [$]
+  )
+
+  const styles = memoStyles()
+
+  return (
+    <Component id='screen-zone-tab-view' data-type='about'>
+      <Animated.ScrollView
+        ref={handleRef}
+        nestedScrollEnabled={ANDROID}
+        contentContainerStyle={ANDROID ? styles.nestScroll : styles.contentContainerStyle}
+        {...SCROLL_VIEW_RESET_PROPS}
+        onScroll={handleScrollEvent}
+      >
+        <View style={styles.page}>
+          <Lock />
+          <Service />
+          <Content />
+        </View>
+      </Animated.ScrollView>
+    </Component>
+  )
+}
+
+export default observer(About)

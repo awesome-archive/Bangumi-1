@@ -1,0 +1,51 @@
+/*
+ * @Author: czy0729
+ * @Date: 2019-12-13 11:08:54
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2024-09-02 16:55:41
+ */
+import React, { memo } from 'react'
+import RNSlider from '@react-native-community/slider'
+import { r } from '@utils/dev'
+import { FROZEN_FN } from '@constants'
+import { COMPONENT } from './ds'
+
+import type { Props as SliderProps } from './types'
+export type { SliderProps }
+
+/** 滑动输入条 */
+export const Slider = memo(
+  ({
+    defaultValue = 0,
+    value,
+    min,
+    max,
+    step,
+    disabled = false,
+    onChange = FROZEN_FN,
+    onAfterChange = FROZEN_FN,
+    maximumTrackTintColor,
+    minimumTrackTintColor,
+    ...other
+  }: SliderProps) => {
+    r(COMPONENT)
+
+    return (
+      <RNSlider
+        {...other}
+        value={defaultValue || value}
+        minimumValue={min}
+        maximumValue={max}
+        step={step}
+        minimumTrackTintColor={minimumTrackTintColor}
+        maximumTrackTintColor={maximumTrackTintColor}
+        disabled={disabled}
+        tapToSeek
+        onValueChange={onChange}
+        onSlidingComplete={onAfterChange}
+      />
+    )
+  }
+)
+
+export default Slider

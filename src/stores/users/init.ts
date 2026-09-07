@@ -1,0 +1,143 @@
+/*
+ * @Author: czy0729
+ * @Date: 2019-07-24 10:32:50
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-01-18 19:47:56
+ */
+import { LIST_EMPTY } from '@constants'
+
+import type { UserId } from '@types'
+import type {
+  Blogs,
+  Catalogs,
+  Characters,
+  Friends,
+  MyFriendsMap,
+  Recents,
+  Users,
+  UserStats,
+  UserStatsMap
+} from './types'
+
+export const NAMESPACE = 'Users'
+
+export const INIT_USER_STATS = {
+  avg: '',
+  chart: {
+    '1': '',
+    '2': '',
+    '3': '',
+    '4': '',
+    '5': '',
+    '6': '',
+    '7': '',
+    '8': '',
+    '9': '',
+    '10': ''
+  },
+  collect: '',
+  percent: '',
+  scored: '',
+  std: '',
+  total: ''
+} as UserStats
+
+export const INIT_USER_STATS_MAP = {
+  all: INIT_USER_STATS,
+  1: INIT_USER_STATS,
+  2: INIT_USER_STATS,
+  3: INIT_USER_STATS,
+  4: INIT_USER_STATS,
+  6: INIT_USER_STATS
+} satisfies UserStatsMap
+
+export const INIT_USERS = {
+  userId: '',
+  userName: '',
+  avatar: '',
+  sign: '',
+  join: '',
+  hobby: '0',
+  percent: '',
+  recent: '',
+  doing: '',
+  collect: '',
+  wish: '',
+  onHold: '',
+  dropped: '',
+  connectUrl: '',
+  disconnectUrl: '',
+  formhash: '',
+  ban: '',
+  userStats: INIT_USER_STATS,
+  userStatsMap: INIT_USER_STATS_MAP,
+  networkService: []
+} as Users
+
+export const INIT_USERS_INFO = {
+  avatar: '',
+  userId: '',
+  userName: '',
+  _loaded: false
+}
+
+export const STATE = {
+  /** 全局用户头像缓存索引 */
+  avatars: {
+    0: '' as string
+  },
+
+  /** 好友列表 */
+  friends: {} as Record<UserId, Friends>,
+
+  /** 反向好友列表 */
+  revFriends: {} as Record<UserId, Friends>,
+
+  /** 我的好友 userId 哈希映射 */
+  myFriendsMap: {
+    _loaded: 0
+  } as MyFriendsMap,
+
+  /** 用户信息 */
+  users: {
+    0: INIT_USERS
+  },
+
+  /** 用户简短信息 */
+  usersInfo: {
+    0: INIT_USERS_INFO
+  },
+
+  /** 用户收藏的虚拟角色 */
+  characters: {} as Record<UserId, Characters>,
+
+  /** 用户收藏的现实人物 */
+  persons: {} as Record<UserId, Characters>,
+
+  /** 我收藏的人物近况 */
+  recents: LIST_EMPTY as Recents,
+
+  /** 用户日志 */
+  blogs: {} as Record<UserId, Blogs>,
+
+  /** 用户目录 */
+  catalogs: {} as Record<UserId, Catalogs>,
+
+  /** 用户收藏的目录 */
+  catalogsCollect: {} as Record<UserId, Catalogs>
+}
+
+export const LOADED = {
+  avatars: false,
+  blogs: false,
+  catalogs: false,
+  catalogsCollect: false,
+  characters: false,
+  friends: false,
+  revFriends: false,
+  myFriendsMap: false,
+  persons: false,
+  recents: false,
+  users: false,
+  usersInfo: false
+}

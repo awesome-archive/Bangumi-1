@@ -1,0 +1,33 @@
+/*
+ * @Author: czy0729
+ * @Date: 2022-11-28 05:51:01
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-03-31 05:52:17
+ */
+import { _ } from '@stores'
+
+export const memoStyles = _.memoStyles(() => ({
+  loading: {
+    height: 60
+  },
+  container: {
+    paddingLeft: _.wind,
+    backgroundColor: _.colorPlain
+  },
+  image: {
+    marginRight: _.xs,
+    marginTop: _.md
+  },
+  item: {
+    paddingVertical: 12,
+    paddingLeft: _.sm,
+    paddingRight: _.wind
+  },
+  title: {
+    marginTop: 5
+  },
+  favor: {
+    marginTop: 5,
+    marginLeft: _.md
+  }
+}))

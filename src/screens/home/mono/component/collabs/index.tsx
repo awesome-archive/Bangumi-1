@@ -1,0 +1,101 @@
+/*
+ * @Author: czy0729
+ * @Date: 2023-01-10 05:37:39
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-06-07 20:51:57
+ */
+import React from 'react'
+import { View } from 'react-native'
+import { Flex, Iconfont, ScrollView, Text, Touchable } from '@components'
+import { Avatar, InView, PreventTouchPlaceholder, SectionTitle } from '@_'
+import { _, useStore } from '@stores'
+import { appNavigate, getMonoCoverSmall } from '@utils'
+import { t } from '@utils/fetch'
+import { useObserver } from '@utils/hooks'
+import { HOST, IMG_INFO_ONLY } from '@constants'
+import { COMPONENT } from './ds'
+import { styles } from './styles'
+
+import type { Ctx } from '../../types'
+
+function Collabs() {
+  const { $, navigation } = useStore<Ctx>(COMPONENT)
+
+  return useObserver(() => {
+    const { collabs } = $.mono
+    if (!collabs?.length) return null
+
+    return (
+      <InView style={styles.container} y={Math.floor(_.window.height * 0.5)}>
+        <SectionTitle
+          style={_.container.wind}
+          right={
+            <Flex>
+              <Touchable
+                style={styles.touch}
+                onPress={() => {
+                  navigation.push('WebBrowser', {
+                    url: `${HOST}/${$.monoId}/collabs`,
+                    title: `${$.nameTop}的合作`
+                  })
+
+                  t('人物.跳转', {
+                    from: '合作',
+                    to: 'WebBrowser',
+                    monoId: $.monoId
+                  })
+                }}
+              >
+                <Flex>
+                  <Text style={_.ml.sm} type='sub'>
+                    全部
+                  </Text>
+                  <Iconfont style={_.ml.xs} name='md-open-in-new' color={_.colorSub} size={16} />
+                </Flex>
+              </Touchable>
+            </Flex>
+          }
+        >
+          合作
+        </SectionTitle>
+
+        <ScrollView style={_.mt.md} contentContainerStyle={_.container.wind} horizontal>
+          {collabs.map(item => (
+            <Touchable
+              key={item.href}
+              style={styles.item}
+              animate
+              onPress={() => {
+                appNavigate(item.href, navigation)
+
+                t('人物.跳转', {
+                  from: '合作',
+                  to: 'Mono',
+                  monoId: $.monoId,
+                  href: item.href
+                })
+              }}
+            >
+              <Flex>
+                <Avatar src={getMonoCoverSmall(item.cover) || IMG_INFO_ONLY} name={item.name} />
+                <View style={_.ml.sm}>
+                  <Flex>
+                    <Text size={13} bold>
+                      {item.name}
+                    </Text>
+                  </Flex>
+                  <Text style={_.mt.xs} size={10} type='sub' bold>
+                    {item.count}
+                  </Text>
+                </View>
+              </Flex>
+            </Touchable>
+          ))}
+        </ScrollView>
+        <PreventTouchPlaceholder />
+      </InView>
+    )
+  })
+}
+
+export default Collabs

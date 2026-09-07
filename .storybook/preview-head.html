@@ -1,0 +1,75 @@
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="format-detection" content="telephone=no" />
+<meta name="format-detection" content="address=no" />
+<meta name="theme-color" content="#000000" />
+<link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon" />
+<style>
+  * {
+    box-sizing: border-box;
+    outline: none !important;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+  }
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    color: transparent;
+  }
+  html[data-theme='dark'] {
+    background: rgb(24, 24, 24) !important;
+    color-scheme: dark;
+    supported-color-schemes: dark;
+  }
+  body {
+    padding: 0 !important;
+    font-family: rhrm, PingFang SC, HarmonyOS_Medium, Helvetica Neue, Microsoft YaHei, sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: none;
+    background: rgb(24, 24, 24) !important;
+  }
+  #awardWrapper {
+    font-family: rhrm, PingFang SC, HarmonyOS_Medium, Helvetica Neue, Microsoft YaHei, sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: none;
+  }
+  .sb-wrapper {
+    background: rgb(24, 24, 24) !important;
+  }
+  #root {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: rhrm, PingFang SC, HarmonyOS_Medium, Helvetica Neue, Microsoft YaHei, sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    background: rgb(24, 24, 24) !important;
+    overflow: hidden;
+  }
+  /* @font-face {
+    font-family: 'bgm';
+    src: url('https://cdn.jsdelivr.net/gh/czy0729/Bangumi@master/src/assets/fonts/AppleColorEmoji.ttf')
+      format('truetype');
+    font-display: swap;
+  } */
+</style>
+<script>
+  const htmlElement = document.getElementsByTagName('html')[0]
+  htmlElement.setAttribute('data-theme', 'dark')
+  document.title = 'Bangumi 番组计划'
+
+  function scrollHorizontally(event) {
+    event.preventDefault() // 阻止默认滚动行为
+    const delta = Math.max(-1, Math.min(1, event.wheelDelta || -event.detail))
+    const container = event.target
+    container.scrollLeft -= delta * 30 // 触发横向滚动
+  }
+</script>
+<script
+  async
+  src="https://umami.magma.ink/script.js"
+  data-website-id="5ab772a6-b40d-44c4-ad6c-c241b425ed33"
+  data-auto-track="false"
+></script>

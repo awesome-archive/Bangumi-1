@@ -1,0 +1,61 @@
+/*
+ * @Author: czy0729
+ * @Date: 2022-06-17 12:20:26
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-04-23 22:16:39
+ */
+import { rc } from '@utils/dev'
+import { EVENT, FROZEN_FN, IMG_HEIGHT, IMG_WIDTH } from '@constants'
+import { COMPONENT as PARENT } from '../ds'
+
+import type { Navigation } from '@types'
+import type { memoStyles } from './styles'
+import type { Props } from './types'
+
+export const COMPONENT = rc(PARENT, 'ItemCollections')
+
+export const COMPONENT_MAIN = rc(COMPONENT)
+
+export const ITEM_COLLECTIONS_HEIGHT = 152
+
+export const COVER_WIDTH = Math.floor(IMG_WIDTH * 1.1)
+
+export const COVER_HEIGHT = Math.floor(IMG_HEIGHT * 1.1)
+
+export const DEFAULT_PROPS = {
+  navigation: {} as Navigation,
+  styles: {} as ReturnType<typeof memoStyles>,
+  index: 0 as number,
+  inViewY: 0 as number,
+  id: 0 as Props['id'],
+  name: '' as Props['name'],
+  nameCn: '' as Props['nameCn'],
+  tip: '' as Props['tip'],
+  rank: '' as Props['rank'],
+  score: '' as Props['score'],
+  total: '' as Props['total'],
+  simpleStars: false as Props['simpleStars'],
+  tags: '' as Props['tags'],
+  comments: '' as Props['comments'],
+  time: '' as Props['time'],
+  collection: '' as Props['collection'],
+  cover: '' as Props['cover'],
+  type: '' as Props['type'],
+  numberOfLines: 2 as Props['numberOfLines'],
+  modify: '' as Props['modify'],
+  showLabel: true as Props['showLabel'],
+  hideScore: false as Props['hideScore'],
+  relatedId: 0 as Props['relatedId'],
+  isCollect: false as Props['isCollect'],
+  isCatalog: false as Props['isCatalog'],
+  isEditable: false as Props['isEditable'],
+  event: EVENT as Props['event'],
+  filter: '' as Props['filter'],
+  showManage: false as Props['showManage'],
+  showLikesCreate: false as Props['showLikesCreate'],
+  touchPosition: 'outer' as Props['touchPosition'],
+  commentsFull: false as Props['commentsFull'],
+  commentsLines: undefined as Props['commentsLines'],
+  active: false as boolean,
+  onEdit: FROZEN_FN as Props['onEdit']
+} as const

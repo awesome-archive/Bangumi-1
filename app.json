@@ -1,48 +1,77 @@
 {
   "expo": {
-    "name": "Bangumi iOS test",
-    "slug": "bangumi-ios-test",
-    "privacy": "public",
-    "sdkVersion": "35.0.0",
-    "platforms": [
-      "ios",
-      "android"
-    ],
-    "version": "2.5.2",
-    "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "updates": {
-      "enabled": false,
-      "fallbackToCacheTimeout": 0
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "bundleIdentifier": "com.czy0729.bangumi",
-      "supportsTablet": false
-    },
+    "description": "A React Native App for https://bgm.tv, tinygrail plugin 260101",
+    "version": "8.39.4",
     "android": {
+      "versionCode": 903940,
       "package": "com.czy0729.bangumi",
-      "versionCode": 252,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/foreground.png",
+        "foregroundImage": "./src/assets/images/foreground.png",
         "backgroundColor": "#000000"
+      },
+      "permissions": [
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "The app needs to access your calendar."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./src/assets/images/splash.png",
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "image": "./src/assets/images/splash_night.png",
+            "backgroundColor": "#000000"
+          }
+        }
+      ],
+      "expo-asset",
+      "expo-font",
+      "expo-web-browser"
+    ],
+    "name": "Bangumi",
+    "slug": "bangumi",
+    "scheme": "bangumi",
+    "platforms": [
+      "ios"
+    ],
+    "orientation": "default",
+    "ios": {
+      "bundleIdentifier": "tv.bangumi.czy0729",
+      "supportsTablet": true,
+      "requireFullScreen": true,
+      "infoPlist": {
+        "NSCalendarsUsageDescription": "The app needs to access your calendar.",
+        "NSRemindersUsageDescription": "Allow $(PRODUCT_NAME) to access your reminders",
+        "NSCalendarsFullAccessUsageDescription": "The app needs to access your calendar.",
+        "NSRemindersFullAccessUsageDescription": "Allow $(PRODUCT_NAME) to access your reminders"
       }
     },
     "androidStatusBar": {
       "barStyle": "dark-content",
       "backgroundColor": "#ffffff"
     },
-    "description": "A React Native App for https://bgm.tv ",
+    "icon": "./src/assets/images/icon.png",
+    "extra": {
+      "storybookEnabled": true,
+      "eas": {
+        "projectId": "ecbab469-60cb-4ec7-b6b7-b90e6d72c937"
+      }
+    },
+    "updates": {
+      "enabled": false,
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/ecbab469-60cb-4ec7-b6b7-b90e6d72c937"
+    },
+    "assetBundlePatterns": [],
     "githubUrl": "https://github.com/czy0729/Bangumi",
-    "entryPoint": "node_modules/expo/AppEntry.js"
-  },
-  "displayName": "Bangumi",
-  "name": "czy0729.bangumi"
+    "runtimeVersion": "1.0.0"
+  }
 }

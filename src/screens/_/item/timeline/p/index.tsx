@@ -1,0 +1,67 @@
+/*
+ * @Author: czy0729
+ * @Date: 2022-11-11 19:17:41
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-03-20 06:30:57
+ */
+import React from 'react'
+import { observer } from 'mobx-react'
+import { Katakana, Text } from '@components'
+import { Name } from '../../../base'
+import P3 from '../p3'
+
+import type { Props } from './types'
+
+function P({
+  image,
+  p1Text,
+  p1Url,
+  p2Text,
+  p3Text,
+  p3Url,
+  p4Text,
+  userId,
+  avatarSrc,
+  onNavigate
+}: Props) {
+  // 是否渲染第一行
+  const hasPosition = !!(p1Text || p2Text || p3Text?.length || p4Text)
+  if (!hasPosition) return null
+
+  const url = String(p3Url?.[0] || '')
+  const isSubject = url.includes('/subject/') && !url.includes('/ep/')
+
+  return (
+    <Katakana.Provider type={isSubject ? 'main' : 'title'} lineHeight={16} numberOfLines={8}>
+      {!!p1Text && (
+        <Name
+          userId={userId}
+          type='title'
+          lineHeight={16}
+          bold
+          onPress={() => {
+            onNavigate(p1Url, {
+              _name: p1Text,
+              _image: avatarSrc
+            })
+          }}
+        >
+          {p1Text}
+        </Name>
+      )}
+      <Text type='sub' lineHeight={16}>
+        {!!p1Text && ' '}
+        {p2Text}{' '}
+      </Text>
+      <P3 image={image} p3Text={p3Text} p3Url={p3Url} onNavigate={onNavigate} />
+      {!!p4Text && (
+        <Katakana type='sub' lineHeight={16}>
+          {' '}
+          {p4Text}
+        </Katakana>
+      )}
+    </Katakana.Provider>
+  )
+}
+
+export default observer(P)

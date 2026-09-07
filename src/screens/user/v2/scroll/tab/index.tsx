@@ -1,0 +1,106 @@
+/*
+ * @Author: czy0729
+ * @Date: 2023-03-19 04:52:14
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-05-14 21:46:07
+ */
+import React, { useCallback, useMemo, useRef } from 'react'
+import { Animated } from 'react-native'
+import { observer } from 'mobx-react'
+import { SceneMap, TabView } from '@components'
+import { _ } from '@stores'
+import { r } from '@utils/dev'
+import { useInsets } from '@utils/hooks'
+import TabBarLeft from '../../component/tab-bar-left'
+import { H_HEADER, TABS } from '../../ds'
+import List from '../list'
+import TabBar from './tab-bar'
+import { COMPONENT } from './ds'
+import { styles } from './styles'
+
+import type { Props } from './types'
+
+function Tab({ page, scrollY, onIndexChange, onScroll, onSwipeStart, onRefreshOffset }: Props) {
+  r(COMPONENT)
+
+  const { headerHeight } = useInsets()
+  const topHeaderHeight = Math.max(H_HEADER, headerHeight)
+
+  const renderScene = useRef(
+    SceneMap(
+      Object.assign(
+        {},
+        ...TABS.map(({ key, title }, index) => ({
+          [key]: () => (
+            <List
+              page={index}
+              title={title}
+              scrollY={scrollY}
+              onScroll={onScroll}
+              onRefreshOffset={onRefreshOffset}
+            />
+          )
+        }))
+      )
+    )
+  )
+  const navigationState = useMemo(
+    () => ({
+      index: page,
+      routes: TABS
+    }),
+    [page]
+  )
+  const transform = useMemo(
+    () => ({
+      transform: [
+        {
+          translateY: scrollY.interpolate({
+            inputRange: [
+              -_.parallaxImageHeight,
+              0,
+              _.parallaxImageHeight - topHeaderHeight,
+              _.parallaxImageHeight
+            ],
+            outputRange: [
+              _.parallaxImageHeight * 2,
+              _.parallaxImageHeight,
+              topHeaderHeight,
+              topHeaderHeight
+            ]
+          })
+        }
+      ]
+    }),
+    [topHeaderHeight, scrollY]
+  )
+
+  const renderTabBar = useCallback(
+    props => (
+      <Animated.View style={[styles.tabBarWrap, transform]}>
+        <TabBar {...props} />
+      </Animated.View>
+    ),
+    [transform]
+  )
+
+  return (
+    <>
+      <TabView
+        key={_.orientation}
+        lazy
+        lazyPreloadDistance={0}
+        navigationState={navigationState}
+        renderTabBar={renderTabBar}
+        renderScene={renderScene.current}
+        onSwipeStart={onSwipeStart}
+        onIndexChange={onIndexChange}
+      />
+      <Animated.View style={[styles.tabBarLeft, transform]}>
+        <TabBarLeft />
+      </Animated.View>
+    </>
+  )
+}
+
+export default observer(Tab)

@@ -1,0 +1,34 @@
+/*
+ * @Author: czy0729
+ * @Date: 2019-12-30 18:01:09
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2024-11-17 06:56:53
+ */
+import React from 'react'
+import { observer } from 'mobx-react'
+import { Component, HeaderPlaceholder, Page } from '@components'
+import { StoreContext } from '@stores'
+import List from './component/list'
+import Header from './header'
+import { useBrowserPage } from './hooks'
+
+import type { NavigationProps } from '@types'
+
+/** 索引 */
+function Browser(props: NavigationProps) {
+  const { id, $ } = useBrowserPage(props)
+
+  return (
+    <Component id='screen-browser'>
+      <StoreContext.Provider value={id}>
+        <Page loaded={$.state._loaded} loading={!$.list._loaded}>
+          <HeaderPlaceholder />
+          <List />
+        </Page>
+        <Header />
+      </StoreContext.Provider>
+    </Component>
+  )
+}
+
+export default observer(Browser)

@@ -1,0 +1,46 @@
+/*
+ * @Author: czy0729
+ * @Date: 2025-07-17 13:11:20
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-02-07 09:07:19
+ */
+import { computed } from 'mobx'
+import { userStore } from '@stores'
+import { desc } from '@utils'
+import { computedFn } from '@utils/computed-fn'
+import { FROZEN_ARRAY } from '@constants'
+import { getDay, getPercent, getTotal } from '../utils'
+import State from './state'
+
+import type { UserId } from '@types'
+
+export default class Computed extends State {
+  @computed get userInfo() {
+    return userStore.userInfo
+  }
+
+  @computed get userId() {
+    return `tinygrail_lottery_${getDay(this.state.prev)}`
+  }
+
+  @computed get list() {
+    return this.state.list[this.userId] || FROZEN_ARRAY
+  }
+
+  @computed get computedList() {
+    const list = [...this.list]
+    return list.sort((a, b) => {
+      return this.state.sort === 'amount'
+        ? desc(getTotal(this.detail(a)), getTotal(this.detail(b)))
+        : desc(getPercent(this.detail(a)), getPercent(this.detail(b)))
+    })
+  }
+
+  detail = computedFn((id: string) => {
+    return this.state.detail[id] || null
+  })
+
+  userStatus = computedFn((userId: UserId) => {
+    return this.state.userStatus[userId] || false
+  })
+}

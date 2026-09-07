@@ -1,0 +1,44 @@
+/*
+ * @Author: czy0729
+ * @Date: 2024-01-10 04:19:43
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2024-11-17 10:05:18
+ */
+import React from 'react'
+import { Flex, Iconfont, Text, Touchable } from '@components'
+import { useStore } from '@stores'
+import { t } from '@utils/fetch'
+import { useObserver } from '@utils/hooks'
+import { COMPONENT } from './ds'
+import { styles } from './styles'
+
+import type { Ctx } from '../../types'
+
+function SectionRight({ event, text, to }) {
+  const { $, navigation } = useStore<Ctx>(COMPONENT)
+
+  return useObserver(() => (
+    <Touchable
+      style={styles.touch}
+      onPress={() => {
+        t(event.id, {
+          ...event.data,
+          to,
+          monoId: $.monoId
+        })
+
+        navigation.push(to, {
+          monoId: $.monoId,
+          name: $.cn || $.jp
+        })
+      }}
+    >
+      <Flex>
+        <Text type='sub'>{text}</Text>
+        <Iconfont name='md-navigate-next' />
+      </Flex>
+    </Touchable>
+  ))
+}
+
+export default SectionRight

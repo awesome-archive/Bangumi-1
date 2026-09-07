@@ -1,0 +1,86 @@
+/*
+ * @Author: czy0729
+ * @Date: 2020-03-29 14:23:27
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-03-22 02:55:09
+ */
+import React, { useCallback, useMemo } from 'react'
+import { observer } from 'mobx-react'
+import { Flex, Heatmap, Iconfont, Link } from '@components'
+import { Popover } from '@_'
+import { _ } from '@stores'
+import { stl } from '@utils'
+import { t } from '@utils/fetch'
+import { useNavigation } from '@utils/hooks'
+import { HTML_NEW_TOPIC, WEB } from '@constants'
+import { styles } from './styles'
+
+import type { WithViewStyles } from '@types'
+
+const TEXT_SEARCH = '小组搜索'
+const TEXT_SETTING = '超展开设置'
+const TEXT_POST = '添加新讨论'
+
+function IconMore({ style }: WithViewStyles) {
+  const navigation = useNavigation()
+
+  const memoData = useMemo(() => {
+    const list = []
+    if (!WEB) list.push(TEXT_SEARCH)
+    list.push(TEXT_SETTING, TEXT_POST)
+
+    return list
+  }, [])
+
+  const handleSelect = useCallback(
+    (key: string) => {
+      switch (key) {
+        case TEXT_SEARCH:
+          navigation.push('RakuenSearch')
+          break
+
+        case TEXT_SETTING:
+          navigation.push('RakuenSetting')
+          break
+
+        case TEXT_POST:
+          navigation.push('WebBrowser', {
+            url: HTML_NEW_TOPIC(),
+            title: TEXT_POST,
+            desc: '发帖组件复杂并没有重新开发实装。若你看见的不是发帖页面，请先在此页面进行登录。请务必刷新一下验证码再登录。成功后点击右上方刷新页面。',
+            injectedViewport: true,
+            gestureEnabled: false
+          })
+          break
+
+        default:
+          break
+      }
+
+      t('超展开.右上角菜单', { key })
+    },
+    [navigation]
+  )
+
+  return (
+    <Flex style={_.mr.xs}>
+      <Link style={_.mr._xxs} path='RakuenHistory'>
+        <Flex style={styles.moreIcon} justify='center'>
+          <Iconfont name='md-inbox' color={_.colorTitle} size={20} />
+        </Flex>
+      </Link>
+
+      <Popover style={stl(styles.more, style)} data={memoData} onSelect={handleSelect}>
+        <Flex style={styles.moreIcon} justify='center'>
+          <Iconfont name='md-more-horiz' color={_.colorTitle} />
+        </Flex>
+
+        <Heatmap id='超展开.右上角菜单' />
+        <Heatmap right={57} bottom={-32} id='超展开.取消预读取' />
+        <Heatmap bottom={-32} id='超展开.预读取' />
+      </Popover>
+    </Flex>
+  )
+}
+
+export default observer(IconMore)

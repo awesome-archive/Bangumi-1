@@ -1,0 +1,68 @@
+/*
+ * @Author: czy0729
+ * @Date: 2024-03-07 16:57:16
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-01-14 08:13:50
+ */
+import React from 'react'
+import { View } from 'react-native'
+import { observer } from 'mobx-react'
+import { Button, Flex, Input, Text } from '@components'
+import { _, tinygrailStore, useStore } from '@stores'
+import { confirm, formatNumber } from '@utils'
+import { useMount } from '@utils/hooks'
+import { memoStyles } from './styles'
+
+import type { Ctx } from '../../../types'
+
+function Amount() {
+  const { $ } = useStore<Ctx>()
+
+  useMount(() => {
+    $.fetchQueueUnique([$.fetchUserLogs])
+  })
+
+  const styles = memoStyles()
+  const { loading, amount } = $.state
+  const { sacrifices = 0 } = $.userLogs
+
+  return (
+    <Flex style={_.mt.sm}>
+      <Flex.Item>
+        <View style={styles.inputWrap}>
+          <Input
+            style={styles.input}
+            keyboardType='numeric'
+            value={String(Math.floor(amount))}
+            clearButtonMode='never'
+            onChangeText={$.changeAmount}
+          />
+          {!!sacrifices && (
+            <Text style={styles.sacrifices} type='ask' size={12} pointerEvents='none'>
+              已献祭 {formatNumber(sacrifices, 0)} 股
+            </Text>
+          )}
+        </View>
+      </Flex.Item>
+      <View style={styles.btnSubmit}>
+        <Button
+          style={styles.btnAsk}
+          type='ask'
+          radius={false}
+          loading={loading}
+          onPress={() => {
+            if (tinygrailStore.checkAuth()) {
+              if (loading) return
+
+              confirm(`确定献祭 ${amount}股?`, () => $.doSacrifice(), '小圣杯助手')
+            }
+          }}
+        >
+          确定
+        </Button>
+      </View>
+    </Flex>
+  )
+}
+
+export default observer(Amount)

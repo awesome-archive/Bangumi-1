@@ -1,0 +1,34 @@
+/*
+ * @Author: czy0729
+ * @Date: 2023-11-02 13:28:16
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-04-13 06:16:18
+ */
+import React from 'react'
+import { observer } from 'mobx-react'
+import { Component, Text } from '@components'
+import { stl } from '@utils'
+import { r } from '@utils/dev'
+import { WEB } from '@constants'
+import { COMPONENT } from './ds'
+import { memoStyles } from './styles'
+
+import type { Props as NoticeProps } from './types'
+export type { NoticeProps }
+
+/** 轻提示 */
+export const Notice = observer(({ style, children, ...other }: NoticeProps) => {
+  r(COMPONENT)
+
+  const styles = memoStyles()
+
+  return (
+    <Component id='base-notice' style={stl(styles.notice, style)}>
+      <Text type='sub' size={12} lineHeight={WEB ? 14 : 12} {...other}>
+        {children}
+      </Text>
+    </Component>
+  )
+})
+
+export default Notice

@@ -1,0 +1,1118 @@
+/*
+ * @Author: czy0729
+ * @Date: 2026-09-03 23:27:12
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-09-03 23:27:12
+ */
+jest.mock('../../utils', () => ({
+  getTimestamp: jest.fn(() => Date.now() / 1000)
+}))
+
+jest.mock(
+  '@constants',
+  () => ({
+    DEV: false,
+    FROZEN_ARRAY: Object.freeze([]),
+    FROZEN_OBJECT: Object.freeze({})
+  }),
+  { virtual: true }
+)
+
+jest.mock('@utils/cdn', () => ({
+  CDN_OSS_MAGMA_MONO: (src: string) => src,
+  CDN_OSS_MAGMA_POSTER: (src: string) => src,
+  CDN_OSS_SUBJECT: (src: string) => src
+}))
+
+jest.mock('@constants/host', () => ({
+  HOST: 'https://bgm.tv',
+  HOST_2: 'https://bangumi.tv',
+  HOST_3: 'https://chii.in',
+  HOST_BGM_STATIC: 'https://lain.bgm.tv',
+  IMG_DEFAULT: 'https://lain.bgm.tv/img/default_cover.jpg',
+  EVENT: { id: 'test', data: {} }
+}))
+jest.mock('@constants/data', () => ({
+  HOST: 'https://bgm.tv',
+  HOST_2: 'https://bangumi.tv',
+  HOST_3: 'https://chii.in',
+  HOST_BGM_STATIC: 'https://lain.bgm.tv',
+  IMG_DEFAULT: 'https://lain.bgm.tv/img/default_cover.jpg',
+  EVENT: { id: 'test', data: {} }
+}))
+
+jest.mock('@assets/json', () => ({
+  getJSON: jest.fn(() => [])
+}))
+
+jest.mock('@assets/json/user.json', () => ({
+  default: {}
+}))
+
+jest.mock('../../thirdParty/html', () => ({
+  HTMLDecode: (s: string) => s,
+  removeHTMLTag: (s: string) => s.replace(/<[^>]+>/g, '')
+}))
+
+jest.mock('../../thirdParty/protobuf', () => ({
+  get: jest.fn(() => [])
+}))
+
+jest.mock('../utils', () => ({
+  getSetting: jest.fn(() => ({ cnFirst: false })),
+  getTimestamp: jest.fn(() => Date.now() / 1000)
+}))
+
+jest.mock('../ds', () => ({
+  HOST_IMAGE: '//lain.bgm.tv',
+  NO_IMGS: ['//lain.bgm.tv/pic/cover/c/', '/img/no_icon_subject.png'],
+  TYPE_MAP: {
+    看过: 'do',
+    想看: 'wish',
+    在看: 'doing',
+    搁置: 'on_hold',
+    抛弃: 'drop'
+  },
+  RATING_MAP: {
+    1: '不忍直视',
+    2: '很差',
+    3: '差',
+    4: '较差',
+    5: '不过如此',
+    6: '还行',
+    7: '推荐',
+    8: '力荐',
+    9: '超神作',
+    10: '超神作'
+  },
+  SITE_MAP: { p: 'bangumi', b: 'bilibili', q: 'qq', i: 'iqiyi' },
+  BANGUMI_URL_TEMPLATES: {
+    bilibili: (id: string) => `https://bilibili.com/bangumi/media/${id}`,
+    qq: (id: string) => `https://v.qq.com/detail/${id}.html`
+  },
+  NSFW_KEYWORDS: ['乳', '淫'],
+  X18_DS: ['nsfw', '18+'],
+  FIND_SUBJECT_CN_CACHE_MAP: new Map(),
+  FIND_SUBJECT_JP_CACHE_MAP: new Map(),
+  NSFW_CACHE_MAP: new Map(),
+  GET_AVATAR_CACHE_MAP: new Map()
+}))
+
+import {
+  FIND_SUBJECT_CN_CACHE_MAP,
+  FIND_SUBJECT_JP_CACHE_MAP,
+  GET_AVATAR_CACHE_MAP,
+  NSFW_CACHE_MAP
+} from '../ds'
+import {
+  cnjp,
+  findSubjectCn,
+  findSubjectJp,
+  fixedBgmUrl,
+  fixedRemoteImageUrl,
+  freeze,
+  getAction,
+  getAvatarLocal,
+  getBangumiUrl,
+  getCommentPlainText,
+  getCookie,
+  getCover400,
+  getCoverLarge,
+  getCoverMedium,
+  getCoverSmall,
+  getMonoCoverSmall,
+  getRating,
+  getSubjectCoverCommon,
+  getType,
+  getVisualLength,
+  guessTotalCount,
+  isArray,
+  matchBgmLink,
+  matchCoverUrl,
+  optimize,
+  randomizeImgHost,
+  sliceByVisualLength,
+  unzipBangumiData,
+  updateVisibleBottom,
+  x18,
+  x18s
+} from '../data-source'
+
+describe('getVisualLength', () => {
+  it('纯英文返回字符数 × 0.5', () => {
+    expect(getVisualLength('abc')).toBe(1.5)
+  })
+
+  it('纯中文返回字符数 × 1', () => {
+    expect(getVisualLength('你好')).toBe(2)
+  })
+
+  it('混合字符串', () => {
+    expect(getVisualLength('abc你好')).toBe(3.5)
+  })
+
+  it('空字符串返回 0', () => {
+    expect(getVisualLength('')).toBe(0)
+  })
+
+  // 已修复：控制字符不计宽度
+  it('换行符不计宽度', () => {
+    expect(getVisualLength('\n')).toBe(0)
+  })
+
+  it('tab 不计宽度', () => {
+    expect(getVisualLength('\t')).toBe(0)
+  })
+
+  it('数字混合英文', () => {
+    expect(getVisualLength('abc123')).toBe(3)
+  })
+
+  it('日文假名', () => {
+    expect(getVisualLength('あいう')).toBe(3)
+  })
+
+  it('emoji', () => {
+    expect(getVisualLength('😀')).toBe(1)
+  })
+
+  it('感叹号等半角符号', () => {
+    expect(getVisualLength('!@#')).toBe(1.5)
+  })
+})
+
+describe('sliceByVisualLength', () => {
+  it('正常截断', () => {
+    expect(sliceByVisualLength('abc你好', 3)).toBe('abc你')
+  })
+
+  it('完整保留', () => {
+    expect(sliceByVisualLength('abc你好', 5)).toBe('abc你好')
+  })
+
+  it('精确匹配 maxLen', () => {
+    expect(sliceByVisualLength('你好', 2)).toBe('你好')
+  })
+
+  it('只保留一个中文字符', () => {
+    expect(sliceByVisualLength('你好', 1)).toBe('你')
+  })
+
+  it('空字符串', () => {
+    expect(sliceByVisualLength('', 5)).toBe('')
+  })
+
+  it('maxLen=0 时返回省略号', () => {
+    expect(sliceByVisualLength('abc', 0, '...')).toBe('...')
+  })
+
+  it('截断时追加省略号', () => {
+    // 'a'(0.5)+'b'(0.5)+'c'(0.5)=1.5 <= 2, '你'(1.0)=2.5 > 2 break
+    expect(sliceByVisualLength('abc你好', 2, '...')).toBe('abc...')
+  })
+
+  it('不截断时不追加省略号', () => {
+    expect(sliceByVisualLength('abc', 5, '...')).toBe('abc')
+  })
+
+  it('全中文精确截断', () => {
+    expect(sliceByVisualLength('你好世界', 3)).toBe('你好世')
+  })
+})
+
+describe('fixedRemoteImageUrl', () => {
+  it('补全 https 协议', () => {
+    expect(fixedRemoteImageUrl('//lain.bgm.tv/test.jpg')).toBe('https://lain.bgm.tv/test.jpg')
+  })
+
+  it('http 升级为 https', () => {
+    expect(fixedRemoteImageUrl('http://lain.bgm.tv/test.jpg')).toBe('https://lain.bgm.tv/test.jpg')
+  })
+
+  it('已是 https 不变', () => {
+    expect(fixedRemoteImageUrl('https://lain.bgm.tv/test.jpg')).toBe('https://lain.bgm.tv/test.jpg')
+  })
+
+  // 已修复：regex 使用 [^/]+ 防止跨斜杠匹配
+  it('补全 https 协议, 但保留 cdn-cgi 前缀', () => {
+    const input = '//lain.bgm.tv/cdn-cgi/mirage/xxx-xxx-1800/1280/pic/test.jpg'
+    const result = fixedRemoteImageUrl(input)
+    expect(result).toBe('https://lain.bgm.tv/cdn-cgi/mirage/xxx-xxx-1800/1280/pic/test.jpg')
+  })
+
+  it('带 r/ 前缀时替换质量标记为 l', () => {
+    const result = fixedRemoteImageUrl('//lain.bgm.tv/r/400/pic/cover/m/test.jpg')
+    expect(result).toBe('https://lain.bgm.tv/r/400/pic/cover/l/test.jpg')
+  })
+
+  it('已是 l 质量不变', () => {
+    const result = fixedRemoteImageUrl('//lain.bgm.tv/r/400/pic/cover/l/test.jpg')
+    expect(result).toBe('https://lain.bgm.tv/r/400/pic/cover/l/test.jpg')
+  })
+
+  it('非字符串输入返回原值', () => {
+    expect(fixedRemoteImageUrl(null)).toBe(null)
+    expect(fixedRemoteImageUrl(123)).toBe(123)
+    expect(fixedRemoteImageUrl(undefined)).toBe(undefined)
+  })
+
+  it('空字符串返回空字符串', () => {
+    expect(fixedRemoteImageUrl('')).toBe('')
+  })
+})
+
+describe('getCookie', () => {
+  it('正常解析 cookie', () => {
+    expect(getCookie('token=abc123; session=xyz', 'token')).toBe('abc123')
+  })
+
+  it('解析第二个 cookie', () => {
+    expect(getCookie('token=abc123; session=xyz', 'session')).toBe('xyz')
+  })
+
+  it('解码 URL 编码值', () => {
+    expect(getCookie('token=hello%20world', 'token')).toBe('hello world')
+  })
+
+  it('找不到时返回空字符串', () => {
+    expect(getCookie('token=abc', 'missing')).toBe('')
+  })
+
+  it('空 cookies 字符串', () => {
+    expect(getCookie('', 'token')).toBe('')
+  })
+
+  // 已修复：使用 indexOf 找到第一个 = 后截取完整值
+  it('cookie 值含 = 时完整解析', () => {
+    expect(getCookie('token=abc=def=ghi', 'token')).toBe('abc=def=ghi')
+  })
+
+  it('cookie 值含编码的 = 正常解析', () => {
+    expect(getCookie('data=a%3Db', 'data')).toBe('a=b')
+  })
+})
+
+describe('fixedBgmUrl', () => {
+  it('补全协议头', () => {
+    expect(fixedBgmUrl('/subject/12345')).toBe('https://bgm.tv/subject/12345')
+  })
+
+  it('http 替换为 https', () => {
+    expect(fixedBgmUrl('http://bgm.tv/subject/123')).toBe('https://bgm.tv/subject/123')
+  })
+
+  it('替换 HOST_2 为 HOST', () => {
+    expect(fixedBgmUrl('https://bangumi.tv/subject/123')).toBe('https://bgm.tv/subject/123')
+  })
+
+  it('替换 HOST_3 为 HOST', () => {
+    expect(fixedBgmUrl('https://chii.in/subject/123')).toBe('https://bgm.tv/subject/123')
+  })
+
+  it('已是正确格式不变', () => {
+    expect(fixedBgmUrl('https://bgm.tv/subject/123')).toBe('https://bgm.tv/subject/123')
+  })
+
+  it('空字符串', () => {
+    expect(fixedBgmUrl('')).toBe('')
+  })
+})
+
+describe('matchBgmLink', () => {
+  it('用户目录', () => {
+    const result = matchBgmLink('https://bgm.tv/user/sai/index')
+    expect(result).toEqual({ route: 'Catalogs', params: { userId: 'sai' } })
+  })
+
+  it('用户日志', () => {
+    const result = matchBgmLink('https://bgm.tv/user/sai/blog')
+    expect(result).toEqual({ route: 'Blogs', params: { userId: 'sai' } })
+  })
+
+  it('用户收藏人物', () => {
+    const result = matchBgmLink('https://bgm.tv/user/sai/mono')
+    expect(result).toEqual({ route: 'Character', params: { userId: 'sai' } })
+  })
+
+  it('用户好友', () => {
+    const result = matchBgmLink('https://bgm.tv/user/sai/friends')
+    expect(result).toEqual({ route: 'Friends', params: { userId: 'sai' } })
+  })
+
+  it('用户反向好友', () => {
+    const result = matchBgmLink('https://bgm.tv/user/sai/rev_friends')
+    expect(result).toEqual({ route: 'Friends', params: { userId: 'sai', type: 'rev' } })
+  })
+
+  it('条目', () => {
+    const result = matchBgmLink('https://bgm.tv/subject/454684')
+    expect(result).toEqual({ route: 'Subject', params: { subjectId: '454684' } })
+  })
+
+  it('超展开帖子', () => {
+    const result = matchBgmLink('https://bgm.tv/rakuen/topic/group/350677')
+    expect(result).toEqual({ route: 'Topic', params: { topicId: 'group/350677' } })
+  })
+
+  it('group/topic 帖子', () => {
+    const result = matchBgmLink('https://bgm.tv/group/topic/350677')
+    expect(result).toEqual({ route: 'Topic', params: { topicId: 'group/350677' } })
+  })
+
+  it('人物', () => {
+    const result = matchBgmLink('https://bgm.tv/character/132476')
+    expect(result).toEqual({ route: 'Mono', params: { monoId: 'character/132476' } })
+  })
+
+  it('person', () => {
+    const result = matchBgmLink('https://bgm.tv/person/40794')
+    expect(result).toEqual({ route: 'Mono', params: { monoId: 'person/40794' } })
+  })
+
+  it('搜索', () => {
+    const result = matchBgmLink('https://bgm.tv/subject_search/keyword')
+    expect(result).toEqual({
+      route: 'Search',
+      params: { value: 'keyword', cat: 'subject_all' }
+    })
+  })
+
+  it('标签', () => {
+    const result = matchBgmLink('https://bgm.tv/anime/tag/TV')
+    expect(result).toEqual({
+      route: 'Tag',
+      params: { type: 'anime', tag: 'TV', airtime: undefined }
+    })
+  })
+
+  it('目录', () => {
+    const result = matchBgmLink('https://bgm.tv/index/35176')
+    expect(result).toEqual({ route: 'CatalogDetail', params: { catalogId: '35176' } })
+  })
+
+  it('日志', () => {
+    const result = matchBgmLink('https://bgm.tv/blog/295515')
+    expect(result).toEqual({ route: 'Blog', params: { blogId: '295515' } })
+  })
+
+  it('个人中心', () => {
+    const result = matchBgmLink('https://bgm.tv/user/sukaretto')
+    expect(result).toEqual({ route: 'Zone', params: { userId: 'sukaretto' } })
+  })
+
+  it('App 内部协议', () => {
+    const result = matchBgmLink('https://App/Subject/id:454684')
+    expect(result).toEqual({
+      route: 'Subject',
+      params: { id: '454684' },
+      app: true
+    })
+  })
+
+  it('非 BGM 链接返回 false', () => {
+    expect(matchBgmLink('https://example.com')).toBe(false)
+  })
+
+  it('空字符串', () => {
+    expect(matchBgmLink('')).toBe(false)
+  })
+
+  // 已修复：subjectId 清理查询参数
+  it('subjectId 清理查询参数', () => {
+    const result = matchBgmLink('https://bgm.tv/subject/454684?cat=1')
+    expect(result).toEqual({ route: 'Subject', params: { subjectId: '454684' } })
+  })
+
+  // 已修复：subjectId 清理尾部斜杠
+  it('subjectId 清理尾部斜杠', () => {
+    const result = matchBgmLink('https://bgm.tv/subject/454684/')
+    expect(result).toEqual({ route: 'Subject', params: { subjectId: '454684' } })
+  })
+
+  it('subject/topic 帖子', () => {
+    const result = matchBgmLink('https://bgm.tv/subject/topic/33680')
+    expect(result).toEqual({ route: 'Topic', params: { topicId: 'subject/33680' } })
+  })
+})
+
+describe('getAction', () => {
+  it('书籍返回读', () => {
+    expect(getAction('书籍')).toBe('读')
+  })
+
+  it('游戏返回玩', () => {
+    expect(getAction('游戏')).toBe('玩')
+  })
+
+  it('音乐返回听', () => {
+    expect(getAction('音乐')).toBe('听')
+  })
+
+  it('默认返回看', () => {
+    expect(getAction('动画')).toBe('看')
+  })
+})
+
+describe('getType', () => {
+  it('返回对应 type', () => {
+    expect(getType('看过')).toBe('do')
+    expect(getType('想看')).toBe('wish')
+  })
+
+  it('未知 label 返回默认值', () => {
+    expect(getType('未知')).toBe('plain')
+  })
+
+  it('自定义默认值', () => {
+    expect(getType('未知', 'custom')).toBe('custom')
+  })
+})
+
+describe('getRating', () => {
+  it('返回对应评分', () => {
+    expect(getRating(9)).toBe('超神作')
+    expect(getRating(7)).toBe('推荐')
+    expect(getRating(5)).toBe('不过如此')
+  })
+
+  it('undefined 返回空字符串', () => {
+    expect(getRating(undefined as any)).toBe('')
+  })
+
+  it('小数评分四舍五入', () => {
+    expect(getRating(8.4)).toBe('力荐')
+    expect(getRating(8.6)).toBe('超神作')
+  })
+})
+
+describe('getBangumiUrl', () => {
+  it('返回 bilibili 链接', () => {
+    expect(getBangumiUrl({ site: 'bilibili', id: '12345' })).toBe(
+      'https://bilibili.com/bangumi/media/12345'
+    )
+  })
+
+  it('返回 qq 链接', () => {
+    expect(getBangumiUrl({ site: 'qq', id: '12345' })).toBe('https://v.qq.com/detail/12345.html')
+  })
+
+  it('未知站点返回空', () => {
+    expect(getBangumiUrl({ site: 'unknown', id: '123' })).toBe('')
+  })
+
+  it('有 url 时直接返回', () => {
+    expect(getBangumiUrl({ site: 'bilibili', id: '1', url: 'https://custom.com' })).toBe(
+      'https://custom.com'
+    )
+  })
+
+  it('空 item', () => {
+    expect(getBangumiUrl(null as any)).toBe('')
+  })
+})
+
+describe('isArray', () => {
+  it('普通数组返回 true', () => {
+    expect(isArray([1, 2, 3])).toBe(true)
+  })
+
+  it('空数组返回 true', () => {
+    expect(isArray([])).toBe(true)
+  })
+
+  it('对象返回 false', () => {
+    expect(isArray({})).toBe(false)
+  })
+
+  it('null 返回 false', () => {
+    expect(isArray(null)).toBe(false)
+  })
+
+  it('undefined 返回 false', () => {
+    expect(isArray(undefined)).toBe(false)
+  })
+
+  it('字符串返回 false', () => {
+    expect(isArray('abc')).toBe(false)
+  })
+})
+
+describe('freeze', () => {
+  it('空数组返回冻结空数组', () => {
+    const result = freeze([])
+    expect(result).toEqual([])
+    expect(result).toHaveLength(0)
+  })
+
+  it('非空数组返回原值', () => {
+    const arr = [1, 2, 3]
+    expect(freeze(arr)).toBe(arr)
+  })
+
+  it('空对象返回冻结空对象', () => {
+    const result = freeze({})
+    expect(result).toEqual({})
+  })
+
+  it('非空对象返回原值', () => {
+    const obj = { a: 1 }
+    expect(freeze(obj)).toBe(obj)
+  })
+
+  it('支持函数参数', () => {
+    const result = freeze(() => [])
+    expect(result).toEqual([])
+  })
+
+  it('非空函数返回函数执行结果', () => {
+    const arr = [1, 2]
+    expect(freeze(() => arr)).toBe(arr)
+  })
+})
+
+describe('getCommentPlainText', () => {
+  it('去除引用块', () => {
+    const result = getCommentPlainText('<div class="quote">引用内容</div>实际内容')
+    expect(result).toBe('实际内容')
+  })
+
+  it('br 转换为换行', () => {
+    expect(getCommentPlainText('第一行<br>第二行')).toBe('第一行\n第二行')
+  })
+
+  it('去除 HTML 标签', () => {
+    expect(getCommentPlainText('<p>hello</p>')).toBe('hello')
+  })
+
+  it('bgm 表情提取', () => {
+    const result = getCommentPlainText('<img src="test" alt="(bgm123)">一些文字')
+    expect(result).toContain('(bgm123)')
+  })
+})
+
+describe('getCoverMedium', () => {
+  it('替换为 /c/ 路径', () => {
+    const result = getCoverMedium('https://lain.bgm.tv/pic/cover/g/test.jpg')
+    expect(result).toContain('/c/')
+  })
+
+  it('用户图替换为 /m/ 路径', () => {
+    const result = getCoverMedium('https://lain.bgm.tv/pic/user/g/test.jpg')
+    expect(result).toContain('/m/')
+  })
+
+  it('非 bgm 图片返回原值', () => {
+    expect(getCoverMedium('https://example.com/test.jpg')).toBe('https://example.com/test.jpg')
+  })
+
+  it('角色图片返回原值', () => {
+    expect(getCoverMedium('https://lain.bgm.tv/pic/crt/g/test.jpg')).toBe(
+      'https://lain.bgm.tv/pic/crt/g/test.jpg'
+    )
+  })
+})
+
+describe('getCoverSmall', () => {
+  it('替换为 /s/ 路径', () => {
+    const result = getCoverSmall('https://lain.bgm.tv/pic/cover/c/test.jpg')
+    expect(result).toContain('/s/')
+  })
+
+  it('非 bgm 图片返回原值', () => {
+    expect(getCoverSmall('https://example.com/test.jpg')).toBe('https://example.com/test.jpg')
+  })
+})
+
+describe('getCoverLarge', () => {
+  it('替换为 /l/ 路径', () => {
+    const result = getCoverLarge('https://lain.bgm.tv/pic/cover/c/test.jpg')
+    expect(result).toContain('/l/')
+  })
+
+  it('size=200 时替换 r/400 为 r/200', () => {
+    // 只有当输入已包含 /r/400/ 时才会替换
+    const result = getCoverLarge('https://lain.bgm.tv/r/400/pic/cover/c/test.jpg', 200)
+    expect(result).toContain('/r/200/')
+  })
+})
+
+describe('randomizeImgHost', () => {
+  it('替换 img 主机号', () => {
+    const result = randomizeImgHost('https://img3.doubanio.com/test.jpg')
+    expect(result).toMatch(/img[129]\.doubanio\.com/)
+  })
+
+  it('非字符串返回原值', () => {
+    expect(randomizeImgHost(null as any)).toBe(null)
+  })
+
+  it('不带 img 的 URL 返回原值', () => {
+    expect(randomizeImgHost('https://example.com/test.jpg')).toBe('https://example.com/test.jpg')
+  })
+})
+
+describe('guessTotalCount', () => {
+  it('正常分页信息', () => {
+    const list = {
+      _loaded: true,
+      list: [1, 2, 3],
+      pagination: { page: 1, pageTotal: 10 }
+    }
+    expect(guessTotalCount(list)).toBe(100)
+  })
+
+  it('单页', () => {
+    const list = {
+      _loaded: true,
+      list: [1, 2, 3],
+      pagination: { page: 1, pageTotal: 1 }
+    }
+    expect(guessTotalCount(list)).toBe(3)
+  })
+
+  it('无 _loaded 返回 0', () => {
+    expect(guessTotalCount({ list: [], pagination: { page: 1, pageTotal: 10 } })).toBe(0)
+  })
+
+  it('空列表返回 0', () => {
+    expect(
+      guessTotalCount({ _loaded: true, list: [], pagination: { page: 1, pageTotal: 10 } })
+    ).toBe(0)
+  })
+})
+
+describe('optimize', () => {
+  it('DEV=false 且无 _loaded 时返回 false', () => {
+    expect(optimize({})).toBe(false)
+  })
+
+  it('DEV=false 且 _loaded 存在但 diff >= s 时返回 false', () => {
+    const oldTimestamp = Math.floor(Date.now() / 1000) - 120
+    expect(optimize({ _loaded: oldTimestamp }, 60)).toBe(false)
+  })
+
+  it('DEV=false 且 diff < s 时返回 true（请求被阻止）', () => {
+    const recentTimestamp = Math.floor(Date.now() / 1000) - 10
+    expect(optimize({ _loaded: recentTimestamp }, 60)).toBe(true)
+  })
+
+  it('自定义 s 参数', () => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2024-01-15T12:00:05Z'))
+    const { getTimestamp } = require('../../utils')
+    getTimestamp.mockReturnValue(1705312805) // 2024-01-15T12:00:05Z
+    expect(optimize({ _loaded: 1705312800 }, 10)).toBe(true) // diff=5 < 10
+    jest.useRealTimers()
+  })
+})
+
+describe('cnjp', () => {
+  it('cnFirst=false 时优先返回 jp', () => {
+    expect(cnjp('中文名', '日文名')).toBe('日文名')
+  })
+
+  it('cnFirst=false 时 jp 为空返回 cn', () => {
+    expect(cnjp('中文名', '')).toBe('中文名')
+  })
+
+  it('cnFirst=false 时两者都为空返回空', () => {
+    expect(cnjp('', '')).toBe('')
+  })
+
+  it('cnFirst=false 且 cn/jp 均为 undefined 返回空', () => {
+    const result = cnjp(undefined, undefined)
+    expect(result).toBe('')
+  })
+
+  it('cnFirst=true 时优先返回 cn', () => {
+    const { getSetting: mockGetSetting } = require('../utils')
+    mockGetSetting.mockReturnValueOnce({ cnFirst: true })
+    expect(cnjp('中文名', '日文名')).toBe('中文名')
+  })
+})
+
+describe('x18s', () => {
+  it('包含 nsfw 返回 true', () => {
+    expect(x18s('this is nsfw content')).toBe(true)
+  })
+
+  it('包含 18+ 返回 true', () => {
+    expect(x18s('rated 18+')).toBe(true)
+  })
+
+  it('不包含关键词返回 false', () => {
+    expect(x18s('normal content')).toBe(false)
+  })
+
+  it('大小写不敏感', () => {
+    expect(x18s('NSFW')).toBe(true)
+    expect(x18s('18+')).toBe(true)
+  })
+
+  it('非字符串输入转为字符串', () => {
+    expect(x18s(123 as any)).toBe(false)
+  })
+
+  it('空字符串', () => {
+    expect(x18s('')).toBe(false)
+  })
+})
+
+describe('x18', () => {
+  beforeEach(() => {
+    NSFW_CACHE_MAP.clear()
+  })
+
+  it('空 subjectId 返回 false', () => {
+    expect(x18(0)).toBe(false)
+  })
+
+  // [问题] NSFW_IDS 为空时即使 title 含敏感词也返回 false
+  it('[问题] NSFW_IDS 为空时即使 title 含敏感词也返回 false', () => {
+    expect(x18(12345, '乳頭')).toBe(false)
+  })
+
+  it('NSFW_IDS 有数据且 subjectId 命中时返回 true', () => {
+    const { getJSON } = require('@assets/json')
+    getJSON.mockReturnValueOnce([88888])
+    expect(x18(88888)).toBe(true)
+  })
+
+  it('字符串格式 subjectId 正确解析', () => {
+    // NSFW_IDS 已由上一个测试加载 [88888]，使用同一 ID 测试字符串解析
+    expect(x18('/subject/88888' as any)).toBe(true)
+  })
+
+  it('title 包含敏感关键词时返回 true', () => {
+    const { getJSON } = require('@assets/json')
+    getJSON.mockReturnValueOnce([11111])
+    expect(x18(66666, '某作品乳')).toBe(true)
+  })
+
+  it('title 不包含敏感关键词时返回 false', () => {
+    const { getJSON } = require('@assets/json')
+    getJSON.mockReturnValueOnce([11111])
+    expect(x18(55555, '正常作品')).toBe(false)
+  })
+
+  it('已缓存的结果直接返回', () => {
+    NSFW_CACHE_MAP.set(33333, true)
+    expect(x18(33333)).toBe(true)
+  })
+})
+
+describe('getCover400', () => {
+  it('lain.bgm.tv URL 替换为 r/size 前缀', () => {
+    const result = getCover400('//lain.bgm.tv/pic/cover/g/test.jpg')
+    expect(result).toContain('/r/400/')
+    expect(result).toContain('/pic/cover/l/')
+  })
+
+  it('自定义 size', () => {
+    const result = getCover400('//lain.bgm.tv/pic/cover/g/test.jpg', 200)
+    expect(result).toContain('/r/200/')
+  })
+
+  it('已含 r/NxN 格式替换为 r/size', () => {
+    const result = getCover400('//lain.bgm.tv/r/300x300/pic/cover/g/test.jpg', 400)
+    expect(result).toContain('/r/400/')
+  })
+
+  it('已含 r/800 替换为 r/size', () => {
+    const result = getCover400('//lain.bgm.tv/r/800/pic/cover/g/test.jpg', 400)
+    expect(result).toContain('/r/400/')
+  })
+
+  it('非 lain.bgm.tv URL 返回原值', () => {
+    expect(getCover400('https://example.com/test.jpg')).toBe('https://example.com/test.jpg')
+  })
+
+  it('空字符串返回空字符串', () => {
+    expect(getCover400('')).toBe('')
+  })
+
+  it('默认 size=400', () => {
+    const result = getCover400('//lain.bgm.tv/pic/cover/m/test.jpg')
+    expect(result).toContain('/r/400/')
+  })
+})
+
+describe('getSubjectCoverCommon', () => {
+  it('将 r/N 前缀替换为 /pic/cover/c/', () => {
+    const result = getSubjectCoverCommon('//lain.bgm.tv/r/400/pic/cover/l/test.jpg')
+    expect(result).toContain('/pic/cover/c/')
+    expect(result).not.toContain('/r/400/')
+  })
+
+  it('非字符串返回原值', () => {
+    expect(getSubjectCoverCommon(null as any)).toBe(null)
+  })
+
+  it('空字符串返回空字符串', () => {
+    expect(getSubjectCoverCommon('')).toBe('')
+  })
+
+  it('无 r/ 前缀的 URL 不变', () => {
+    const result = getSubjectCoverCommon('//lain.bgm.tv/pic/cover/c/test.jpg')
+    expect(result).toBe('https://lain.bgm.tv/pic/cover/c/test.jpg')
+  })
+})
+
+describe('getMonoCoverSmall', () => {
+  it('将 r/N 前缀和质量标记替换为 /pic/crt/g/', () => {
+    const result = getMonoCoverSmall('//lain.bgm.tv/r/400/pic/crt/l/test.jpg')
+    expect(result).toContain('/pic/crt/g/')
+  })
+
+  it('非字符串返回原值', () => {
+    expect(getMonoCoverSmall(null as any)).toBe(null)
+  })
+
+  it('空字符串返回空字符串', () => {
+    expect(getMonoCoverSmall('')).toBe('')
+  })
+})
+
+describe('unzipBangumiData', () => {
+  it('正常数据转换', () => {
+    const item = {
+      id: 132734,
+      j: '冴えない彼女の育てかた♭',
+      c: '路人女主的养成方法 ♭',
+      s: { p: 'SP3XVb0jk9E0sho', i: 'a_19rrh9f1yl', ni: 'saenai2', b: 28228738 },
+      t: 'tv'
+    }
+    const result = unzipBangumiData(item)
+    expect(result.title).toBe('冴えない彼女の育てかた♭')
+    expect(result.type).toBe('tv')
+    expect(result.titleTranslate['zh-Hans']).toEqual(['路人女主的养成方法 ♭'])
+    expect(result.sites.length).toBe(5)
+    expect(result.sites[0]).toEqual({ site: 'bangumi', id: '132734' })
+  })
+
+  it('无 s 字段只有 bangumi 站点', () => {
+    const result = unzipBangumiData({ id: 100, j: 'title', c: '中文' })
+    expect(result.sites).toHaveLength(1)
+    expect(result.sites[0]).toEqual({ site: 'bangumi', id: '100' })
+  })
+
+  it('无 t 字段默认 type=tv', () => {
+    const result = unzipBangumiData({ id: 1 })
+    expect(result.type).toBe('tv')
+  })
+
+  it('空参数', () => {
+    const result = unzipBangumiData()
+    expect(result.title).toBeUndefined()
+    expect(result.type).toBe('tv')
+    expect(result.sites).toHaveLength(1)
+  })
+})
+
+describe('matchCoverUrl', () => {
+  it('非字符串输入返回原值', () => {
+    expect(matchCoverUrl(null)).toBe(null)
+    expect(matchCoverUrl(123)).toBe(123)
+  })
+
+  it('src 在 NO_IMGS 中返回默认图', () => {
+    const result = matchCoverUrl('//lain.bgm.tv/pic/cover/c/')
+    expect(result).toBe('https://lain.bgm.tv/img/default_cover.jpg')
+  })
+
+  it('noDefault=true 且 src 在 NO_IMGS 中返回空字符串', () => {
+    // [问题] 实际代码中 NO_IMGS 分支返回 IMG_DEFAULT || fallback，
+    // 当 noDefault=true 时 fallback=''，但 IMG_DEFAULT 有值所以仍返回 IMG_DEFAULT
+    const result = matchCoverUrl('//lain.bgm.tv/pic/cover/c/', true)
+    expect(result).toBe('https://lain.bgm.tv/img/default_cover.jpg')
+  })
+
+  it('大图（含 /l/）不替换质量', () => {
+    const result = matchCoverUrl('//lain.bgm.tv/pic/cover/l/test.jpg')
+    expect(result).toContain('/l/')
+  })
+})
+
+describe('getAvatarLocal', () => {
+  beforeEach(() => {
+    GET_AVATAR_CACHE_MAP.clear()
+  })
+
+  it('空 userId 返回 false', () => {
+    expect(getAvatarLocal('' as any)).toBe(false)
+  })
+
+  it('userData 中找不到对应 userId 返回 false', () => {
+    expect(getAvatarLocal('nonexistent' as any)).toBe(false)
+  })
+
+  it('已缓存的结果直接返回', () => {
+    GET_AVATAR_CACHE_MAP.set('cached', 'https://lain.bgm.tv/pic/user/l/000/abc.jpg')
+    expect(getAvatarLocal('cached' as any)).toBe('https://lain.bgm.tv/pic/user/l/000/abc.jpg')
+  })
+
+  it('已缓存 false 结果直接返回 false', () => {
+    GET_AVATAR_CACHE_MAP.set('missed', false)
+    expect(getAvatarLocal('missed' as any)).toBe(false)
+  })
+})
+
+describe('findSubjectCn', () => {
+  beforeEach(() => {
+    FIND_SUBJECT_CN_CACHE_MAP.clear()
+  })
+
+  it('cnFirst=false 时直接返回 jp', () => {
+    expect(findSubjectCn('日文名')).toBe('日文名')
+  })
+
+  it('已缓存的结果直接返回', () => {
+    const { getSetting: mockGetSetting } = require('../utils')
+    mockGetSetting.mockReturnValueOnce({ cnFirst: true })
+    FIND_SUBJECT_CN_CACHE_MAP.set('cached_jp', '缓存的中文名')
+    expect(findSubjectCn('cached_jp')).toBe('缓存的中文名')
+  })
+
+  it('cnFirst=true 且有匹配时返回中文名', () => {
+    const { getSetting: mockGetSetting } = require('../utils')
+    const { get: mockGet } = require('../../thirdParty/protobuf')
+    mockGetSetting.mockReturnValueOnce({ cnFirst: true })
+    mockGet.mockReturnValueOnce([{ id: 100, j: '日文', c: '中文名' }])
+    expect(findSubjectCn('日文', 100)).toBe('中文名')
+  })
+
+  it('[问题] cnFirst=true 且匹配但 c 为空时缓存并返回 jp', () => {
+    const { getSetting: mockGetSetting } = require('../utils')
+    const { get: mockGet } = require('../../thirdParty/protobuf')
+    mockGetSetting.mockReturnValueOnce({ cnFirst: true })
+    mockGet.mockReturnValueOnce([{ id: 200, j: '日文', c: '' }])
+    const result = findSubjectCn('日文', 200)
+    expect(result).toBe('日文')
+    expect(FIND_SUBJECT_CN_CACHE_MAP.get('日文')).toBe('日文')
+  })
+})
+
+describe('findSubjectJp', () => {
+  beforeEach(() => {
+    FIND_SUBJECT_JP_CACHE_MAP.clear()
+  })
+
+  it('已缓存的结果直接返回', () => {
+    FIND_SUBJECT_JP_CACHE_MAP.set('cached_cn', '缓存的日文名')
+    expect(findSubjectJp('cached_cn')).toBe('缓存的日文名')
+  })
+
+  it('bangumiData 为空数组时返回 cn', () => {
+    expect(findSubjectJp('某中文')).toBe('某中文')
+  })
+
+  it('匹配到数据时返回日文名', () => {
+    const { get: mockGet } = require('../../thirdParty/protobuf')
+    mockGet.mockReturnValueOnce([{ id: 300, j: '日文名', c: '中文名' }])
+    expect(findSubjectJp('中文名', 300)).toBe('日文名')
+  })
+
+  it('匹配到但 j 为空时缓存并返回 cn', () => {
+    const { get: mockGet } = require('../../thirdParty/protobuf')
+    mockGet.mockReturnValueOnce([{ id: 400, j: '', c: '某中文' }])
+    const result = findSubjectJp('某中文', 400)
+    expect(result).toBe('某中文')
+  })
+})
+
+describe('updateVisibleBottom', () => {
+  it('this 无 setState 函数时直接返回', () => {
+    const ctx = {}
+    expect(() =>
+      updateVisibleBottom.call(ctx, {
+        nativeEvent: { contentOffset: { y: 0 }, layoutMeasurement: { height: 100 } }
+      } as any)
+    ).not.toThrow()
+  })
+
+  it('32ms 内重复调用被阻止', () => {
+    const setState = jest.fn()
+    const ctx = {
+      setState,
+      state: { visibleBottom: 0 },
+      __lastVisibleBottomUpdate: 0
+    }
+    const event = {
+      nativeEvent: { contentOffset: { y: 100 }, layoutMeasurement: { height: 500 } }
+    }
+
+    updateVisibleBottom.call(ctx, event as any)
+    expect(setState).toHaveBeenCalledTimes(1)
+
+    updateVisibleBottom.call(ctx, event as any)
+    expect(setState).toHaveBeenCalledTimes(1)
+  })
+
+  it('visibleBottom 小于等于当前值时不更新', () => {
+    const setState = jest.fn()
+    const ctx = {
+      setState,
+      state: { visibleBottom: 999 },
+      __lastVisibleBottomUpdate: 0
+    }
+    const event = {
+      nativeEvent: { contentOffset: { y: 0 }, layoutMeasurement: { height: 100 } }
+    }
+    updateVisibleBottom.call(ctx, event as any)
+    expect(setState).not.toHaveBeenCalled()
+  })
+
+  it('正常更新 visibleBottom', () => {
+    const setState = jest.fn()
+    const ctx = {
+      setState,
+      state: { visibleBottom: 0 },
+      __lastVisibleBottomUpdate: 0
+    }
+    const event = {
+      nativeEvent: { contentOffset: { y: 100 }, layoutMeasurement: { height: 500 } }
+    }
+    updateVisibleBottom.call(ctx, event as any)
+    expect(setState).toHaveBeenCalledWith(
+      expect.objectContaining({ visibleBottom: expect.any(Number) })
+    )
+  })
+})
+
+describe('x18 Set 查询性能', () => {
+  it('用真实 nsfw_id_distribution (1.5W) + game 频道 rank ID 测试', () => {
+    jest.useRealTimers()
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const ids: number[] = require('../../../assets/json/nsfw_id_distribution.json')
+    const idSet = new Set(ids)
+
+    // 实际 game 频道 rank ID（全部不在 nsfw 列表中，模拟未命中场景）
+    const gameRankIds = [
+      631826, 510010, 477111, 611546, 548128, 117092, 484230, 509947, 1143, 625782, 488392, 503983,
+      278949, 233030, 614361
+    ]
+
+    const t1 = performance.now()
+    for (let i = 0; i < 100000; i++) {
+      for (const id of gameRankIds) ids.includes(id)
+    }
+    const includesTime = performance.now() - t1
+
+    const t2 = performance.now()
+    for (let i = 0; i < 100000; i++) {
+      for (const id of gameRankIds) idSet.has(id)
+    }
+    const setTime = performance.now() - t2
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `nsfw_id_distribution (${ids.length}条) includes: ${includesTime.toFixed(
+        1
+      )}ms, Set: ${setTime.toFixed(1)}ms, 快 ${(includesTime / setTime).toFixed(0)} 倍`
+    )
+
+    // Set 应该比 includes 快至少 10 倍
+    expect(setTime).toBeLessThan(includesTime / 10)
+  })
+})

@@ -1,0 +1,378 @@
+/*
+ * @Author: czy0729
+ * @Date: 2019-07-15 09:27:59
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-08-27 00:51:51
+ */
+import { LIST_EMPTY } from '@constants'
+import { MODEL_RATING_STATUS } from '@constants/model'
+
+import type {
+  Actions,
+  EpId,
+  HTMLText,
+  Loaded,
+  MonoId,
+  Origin,
+  RatingStatus,
+  SubjectId,
+  SubjectType,
+  UserId
+} from '@types'
+import type { Vib } from './types'
+import type {
+  ComputedRating,
+  EpStatus,
+  Mono,
+  MonoComments,
+  MonoVoices,
+  MonoWorks,
+  Subject,
+  SubjectCatalogs,
+  SubjectComments,
+  SubjectFormCDN,
+  SubjectFromHTML,
+  SubjectV2
+} from './types'
+
+/** 命名空间 */
+export const NAMESPACE = 'Subject'
+
+/** 看过 */
+export const DEFAULT_RATING_STATUS = MODEL_RATING_STATUS.getValue('看过') as RatingStatus
+
+/** 条目 */
+export const INIT_SUBJECT = {
+  air_date: '',
+  air_weekday: '',
+  blog: null,
+  collection: {},
+  crt: [],
+  eps: [],
+  eps_count: '',
+  id: '',
+  images: {},
+  name: '',
+  name_cn: '',
+  rank: '',
+  rating: {
+    count: {},
+    score: '',
+    total: ''
+  },
+  staff: [],
+  summary: '',
+  topic: [],
+  catalog: [],
+  type: '',
+  url: '',
+  lock: '',
+  formhash: '',
+  _responseGroup: '',
+  _loaded: 0
+}
+
+export const INIT_SUBJECT_V2 = {
+  id: '',
+  date: '',
+  image: '',
+  jp: '',
+  cn: '',
+  tags: [],
+  rank: '',
+  rating: {},
+  collection: {},
+  eps: '',
+  vol: '',
+  locked: false,
+  nsfw: false,
+  type: '',
+  _loaded: true
+}
+
+/** 条目 (HTML) */
+export const INIT_SUBJECT_FROM_HTML_ITEM = {
+  /** 标签 */
+  tags: [],
+
+  /** 关联条目 */
+  relations: [],
+
+  /** 好友评分 */
+  friend: {
+    /** 好友评分 */
+    score: 0,
+
+    /** 总共多少人评分 */
+    total: 0
+  },
+
+  /** 曲目列表 */
+  disc: [],
+
+  /** 书籍章节信息 */
+  book: {
+    chap: 0,
+    vol: 0,
+    totalChap: '',
+    totalVol: ''
+  },
+
+  /** 单行本 */
+  comic: [],
+
+  /** 猜你喜欢 */
+  like: [],
+
+  /** 谁在看 */
+  who: [],
+
+  /** 详情 */
+  info: '',
+  formhash: '',
+  _loaded: 0
+}
+
+/** 条目 (CDN) */
+export const INIT_SUBJECT_FROM_CDN_ITEM = {
+  id: '',
+  type: '',
+  name: '',
+  image: '',
+  rating: {},
+  summary: '',
+  info: '',
+  collection: {},
+  tags: [],
+  eps: [],
+  disc: [],
+  crt: [],
+  staff: [],
+  relations: [],
+  comic: [],
+  like: [],
+  lock: ''
+}
+
+/** 回复项 */
+export const INIT_SUBJECT_COMMENTS_ITEM = {
+  id: '',
+  time: '',
+  floor: '',
+  avatar: '',
+  userId: '',
+  userName: '',
+  userSign: '',
+  replySub: '',
+  message: '',
+  sub: []
+}
+
+/** 角色 */
+export const INIT_MONO = {
+  /** 日文名 */
+  name: '',
+
+  /** 中文名 */
+  nameCn: '',
+
+  /** 封面 */
+  cover: '',
+
+  /** 简介 */
+  info: '',
+
+  /** 内容详情 */
+  detail: '',
+
+  /** 最近演出角色 */
+  voice: [],
+
+  /** 最近参与 */
+  works: [],
+
+  /** 最近参与 */
+  workes: [],
+
+  /** 出演 */
+  jobs: [],
+
+  /** 谁收藏了 */
+  collected: [],
+
+  /** 合作 */
+  collabs: [],
+
+  /** 加入收藏 */
+  collectUrl: '',
+
+  /** 取消收藏 */
+  eraseCollectUrl: ''
+}
+
+/** 制作人员职位项 */
+export const INIT_MONO_WORKS_ITEM = {
+  id: '',
+  cover: '',
+  name: '',
+  nameCn: '',
+  tip: '',
+  position: [] as string[],
+  score: '',
+  total: '',
+  rank: '',
+  collected: false,
+  type: '' as SubjectType
+}
+
+/** 制作人员职位 */
+export const INIT_MONO_WORKS = {
+  ...LIST_EMPTY,
+  filters: []
+}
+
+/** wiki */
+export const INIT_SUBJECT_WIKI = {
+  edits: [],
+  covers: []
+}
+
+export const INIT_EP_V2 = {
+  list: [],
+  _loaded: 0
+}
+
+const STATE = {
+  /** 条目 (云缓存) */
+  subjectFromOSS: {} as Record<SubjectId, Subject>,
+
+  /** @deprecated 条目 (CDN) */
+  subjectFormCDN: {} as Record<SubjectId, SubjectFormCDN>,
+
+  /** @deprecated 条目章节 */
+  subjectEp: {
+    0: {}
+  },
+
+  /** 包含条目的目录 */
+  subjectCatalogs: {} as Record<SubjectId, SubjectCatalogs>,
+
+  /** 章节内容 */
+  epFormHTML: {} as Record<EpId, HTMLText>,
+
+  /** 章节更新时间 */
+  epStatus: {} as EpStatus,
+
+  /** 集数大于 1000 的条目的章节信息 */
+  epV2: {
+    0: {
+      list: [],
+      _loaded: 0
+    }
+  },
+
+  /** 人物信息 */
+  mono: {} as Record<MonoId, Mono>,
+
+  /** 人物吐槽箱 */
+  monoComments: {} as Record<MonoId, MonoComments>,
+
+  /** 人物 (CDN) */
+  monoFormCDN: {} as Record<MonoId, Mono>,
+
+  /** 人物角色 */
+  monoVoices: {} as Record<MonoId, MonoVoices>,
+
+  /** 人物作品 */
+  monoWorks: {} as Record<MonoId, MonoWorks>,
+
+  /** 好友评分列表 */
+  rating: {} as Record<`${SubjectId}|${RatingStatus}|${boolean}`, ComputedRating>,
+
+  /** 条目分数 (用于收藏按网站评分排序) */
+  rank: {
+    0: {
+      r: 0,
+      s: 0,
+      _loaded: 0
+    }
+  },
+
+  /** VIB 相关数据 */
+  vib: {
+    0: {
+      total: 0,
+      avg: 0,
+      mal: 0,
+      malTotal: 0,
+      anidb: 0,
+      anidbTotal: 0,
+      _loaded: 0 as Loaded
+    }
+  } as Record<SubjectId, Vib>,
+
+  /** r18 */
+  nsfw: {
+    0: false
+  },
+
+  /** wiki 修订历史 */
+  wiki: {
+    0: INIT_SUBJECT_WIKI
+  },
+
+  /** 自定义源头数据 */
+  origin: {
+    base: {},
+    custom: {
+      anime: [],
+      hanime: [],
+      manga: [],
+      wenku: [],
+      music: [],
+      game: [],
+      real: []
+    }
+  } as Origin,
+
+  /** 自定义跳转 */
+  actions: {} as Actions,
+
+  /** 追踪TA的评论次数追踪 */
+  commentTrack: {} as Record<`${UserId}|${SubjectType}`, number>
+}
+
+/**
+ * 根据 ID 最后 3 位拆开 1000 个 key 存放
+ * 避免 JSON.stringify 后长度太长, 无法本地化
+ * 也能减少每次写入本地储存的量
+ * @date 2022/04/06
+ */
+for (let i = 0; i < 1000; i += 1) {
+  /** 条目 */
+  STATE[`subject${i}`] = {} as Record<SubjectId, Subject>
+
+  /** 条目 (HTML) */
+  STATE[`subjectFormHTML${i}`] = {} as Record<SubjectId, SubjectFromHTML>
+
+  /** 条目 (new api) */
+  STATE[`subjectV2${i}`] = {} as Record<SubjectId, SubjectV2>
+
+  /** 条目吐槽箱 */
+  STATE[`subjectComments${i}`] = {} as Record<SubjectId, SubjectComments>
+}
+
+export { STATE }
+
+export const LOADED = {
+  actions: false,
+  epStatus: false,
+  epV2: false,
+  mono: false,
+  nsfw: false,
+  origin: false,
+  rank: false,
+  subjectFromOSS: false,
+  vib: false,
+  commentTrack: false
+}

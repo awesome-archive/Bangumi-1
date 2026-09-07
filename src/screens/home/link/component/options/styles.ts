@@ -1,0 +1,53 @@
+/*
+ * @Author: czy0729
+ * @Date: 2025-12-16 03:43:51
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-07-23 07:25:11
+ */
+import { _ } from '@stores'
+
+export const memoStyles = _.memoStyles(() => ({
+  container: {
+    paddingTop: _.md,
+    paddingHorizontal: _._wind
+  },
+  item: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginTop: 10,
+    marginRight: 10,
+    backgroundColor: _.colorMainLight,
+    borderLeftWidth: 3,
+    borderColor: _.colorMainBorder,
+    borderRadius: 4
+  },
+  disabled: {
+    backgroundColor: _.colorBg,
+    borderColor: _.colorBorder,
+    opacity: 0.8
+  },
+  theme: {
+    position: 'absolute',
+    zIndex: 1,
+    top: -8,
+    left: _._wind - 6
+  },
+  trend: {
+    position: 'absolute',
+    zIndex: 1,
+    top: -2,
+    right: _._wind + 2
+  },
+  notice: {
+    marginTop: _.md,
+    marginHorizontal: _._wind
+  },
+  switch: {
+    marginRight: -4,
+    transform: [
+      {
+        scale: 0.8
+      }
+    ]
+  }
+}))

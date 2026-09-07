@@ -1,0 +1,161 @@
+/*
+ * @Author: czy0729
+ * @Date: 2019-04-30 18:47:13
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-03-20 05:42:46
+ */
+import React from 'react'
+import { observer } from 'mobx-react'
+import { Component } from '@components'
+import { rakuenStore, uiStore, useStore } from '@stores'
+import { HTMLDecode } from '@utils'
+import { HOST, MODEL_RAKUEN_NEW_FLOOR_STYLE } from '@constants'
+import Item from './item'
+import PlusOne from './plus-one'
+import { deriveFloorState, isBlockUser, isSpecFloor } from './utils'
+import { COMPONENT } from './ds'
+import { memoStyles } from './styles'
+
+export { ITEM_POST_HEIGHT } from './ds'
+
+import type { Ctx, Props as ItemPostProps } from './types'
+export type { ItemPostProps }
+
+export const ItemPost = observer(
+  ({
+    inViewY,
+    index,
+    contentStyle,
+    extraStyle,
+    avatar,
+    userId,
+    userName,
+    replySub,
+    message,
+    sub,
+    id,
+    authorId,
+    postId,
+    time,
+    floor,
+    userSign,
+    erase,
+    rendered,
+    matchLink,
+    expandNums,
+    event,
+    showFixedTextarea: onShowFixedTextarea,
+    onJumpTo
+  }: ItemPostProps) => {
+    const { $ } = useStore<Ctx>(COMPONENT)
+
+    // 屏蔽脏数据
+    if (!userId) return null
+
+    // 屏蔽用户
+    const uuid = `Topic|${id}`
+    userName = HTMLDecode(userName)
+    if (isBlockUser(userId, userName, replySub, uuid)) return null
+
+    const styles = memoStyles()
+    const url = $?.params?._url || `${HOST}/rakuen/topic/${$?.topicId}`
+    const directFloor = $?.state?.directFloor === floor
+    const isAuthor = authorId === userId
+    const isFriend = $?.myFriendsMap?.[userId]
+
+    const newFloorStyle = MODEL_RAKUEN_NEW_FLOOR_STYLE.getLabel(rakuenStore.setting.newFloorStyle)
+    const readedTime = $?.readed?._time
+    const {
+      msg: decodedMsg,
+      isBlocked,
+      isNew,
+      isJump
+    } = deriveFloorState({
+      message,
+      id,
+      time,
+      postId,
+      readedTime,
+      newFloorStyle,
+      blockKeywords: rakuenStore.setting.blockKeywords
+    })
+    let msg = decodedMsg
+    if (isSpecFloor(msg, sub.length)) {
+      return (
+        <Component id='item-post' data-key={id} data-type='plus-one' style={styles.delete}>
+          <PlusOne
+            id={id}
+            message={message}
+            userId={userId}
+            userName={userName}
+            avatar={avatar}
+            url={url}
+            directFloor={directFloor}
+            isAuthor={isAuthor}
+            isFriend={isFriend}
+            event={event}
+          />
+        </Component>
+      )
+    }
+
+    // 展开子楼层
+    const { expands, translateResultFloor } = $?.state || {}
+    const expandValue = Number(expandNums || rakuenStore.setting.subExpand)
+    let isExpand: boolean
+    if (expandValue !== undefined) {
+      isExpand = sub.length <= expandValue || (sub.length > expandValue && expands?.includes(id))
+    } else {
+      isExpand = true
+    }
+
+    // 屏蔽关键字命中
+    if (isBlocked) {
+      msg = '<span style="color:#999;font-size:13px">已屏蔽</span>'
+    }
+
+    return (
+      <Item
+        inViewY={inViewY}
+        index={index}
+        contentStyle={contentStyle}
+        extraStyle={extraStyle}
+        topicId={$?.topicId || ($?.blogId ? `blog/${$?.blogId}` : undefined)}
+        authorId={authorId}
+        avatar={avatar}
+        erase={erase}
+        floor={floor}
+        directFloor={directFloor}
+        id={id}
+        isAuthor={isAuthor}
+        isExpand={isExpand}
+        isFriend={isFriend}
+        isJump={isJump}
+        isNew={isNew}
+        matchLink={matchLink === undefined ? rendered : matchLink}
+        msg={msg}
+        postId={postId}
+        readedTime={readedTime}
+        replySub={replySub}
+        expandNums={expandValue}
+        sub={sub}
+        time={time}
+        translate={translateResultFloor?.[id]}
+        url={url}
+        userId={userId}
+        userName={userName}
+        userSign={userSign}
+        formhash={$?.topic?.formhash}
+        likeType={$?.topic?.likeType}
+        newFloorStyle={newFloorStyle}
+        event={event}
+        onJumpTo={onJumpTo}
+        onLikesLongPress={uiStore.showLikesUsers}
+        onShowFixedTextare={onShowFixedTextarea}
+        onToggleExpand={$?.toggleExpand}
+      />
+    )
+  }
+)
+
+export default ItemPost

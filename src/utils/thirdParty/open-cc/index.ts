@@ -1,0 +1,65 @@
+/*
+ * @Author: czy0729
+ * @Date: 2024-04-13 16:32:31
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-09-03 05:17:01
+ *
+ * https://github.com/nk2028/opencc-js
+ */
+import { getSetting } from '../../app'
+import hash from '../hash'
+import { createConverter } from './converter'
+import CN from './dict/cn'
+import HK from './dict/hk'
+import TW from './dict/tw'
+
+import type { Converter } from './converter'
+
+const memoCache = {
+  hk: new Map<string, string>(),
+  tw: new Map<string, string>(),
+  noCn: new Map<string, boolean>()
+}
+
+const converters = {
+  hk: null as Converter | null,
+  tw: null as Converter | null
+}
+
+/** 检查字符串是否包含中文 */
+function containsChinese(str: string): boolean {
+  return /[\u4e00-\u9fa5]/.test(str)
+}
+
+/** 简转繁 */
+export function s2t(str: string): string {
+  if (typeof str !== 'string') return str
+
+  // 哈希键
+  const id = hash(str)
+
+  // 先检查无中文缓存
+  if (memoCache.noCn.has(id)) return str
+
+  // 检查是否包含中文
+  if (!containsChinese(str)) {
+    memoCache.noCn.set(id, true)
+    return str
+  }
+
+  const targetLocale = getSetting().s2tLocal === 'hk' ? 'hk' : 'tw'
+
+  // 检查目标语言缓存
+  if (memoCache[targetLocale].has(id)) return memoCache[targetLocale].get(id)!
+
+  // 初始化转换器: 字词级简转繁 + 目标地区字词变体
+  if (!converters[targetLocale]) {
+    converters[targetLocale] = createConverter([CN, targetLocale === 'hk' ? HK : TW])
+  }
+
+  // 执行转换并缓存结果
+  const result = converters[targetLocale]!(str)
+  memoCache[targetLocale].set(id, result)
+
+  return result
+}

@@ -1,0 +1,122 @@
+/*
+ * @Author: czy0729
+ * @Date: 2024-08-14 07:18:31
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-09-07 21:18:30
+ */
+import React from 'react'
+import { rakuenStore } from '@stores'
+import { logger } from '@utils/dev'
+import { SPAN_MARK } from '../ds'
+import EmojiText from '../emoji-text'
+import HiddenText from '../hidden-text'
+import LineThroughtText from '../line-throught-text'
+import MaskText from '../mask-text'
+import TagText from '../tag-text'
+import { formatStyles } from '../utils'
+import { COMPONENT } from './ds'
+
+import type { SpanRendererProps } from './types'
+
+const TAG = `${COMPONENT}/span` as const
+
+export function span({
+  key,
+  style,
+  className,
+  defaultBaseFontStyle,
+  baseFontStyle,
+  rawChildren,
+  children
+}: SpanRendererProps) {
+  if (typeof style !== 'string') return children
+
+  if (style.includes('font-size:0px')) return null
+
+  try {
+    // 暂时没有对样式混合情况作出正确判断, 以重要程度优先(剧透 > 删除 > 隐藏 > 其他)
+    // 防剧透字
+    if (style.includes(SPAN_MARK.mask)) {
+      return (
+        <MaskText
+          style={{
+            ...defaultBaseFontStyle,
+            ...baseFontStyle
+          }}
+        >
+          {children}
+        </MaskText>
+      )
+    }
+
+    // 删除字
+    if (style.includes(SPAN_MARK.lineThrough)) {
+      const target = rawChildren?.[0]
+      const text = target?.parent?.children?.[0]?.data || target?.children?.[0]?.data || ''
+      return (
+        <LineThroughtText
+          key={key}
+          style={{
+            ...defaultBaseFontStyle,
+            ...baseFontStyle
+          }}
+        >
+          {text}
+        </LineThroughtText>
+      )
+    }
+
+    // 隐藏字
+    if (style.includes(SPAN_MARK.hidden)) {
+      const target = rawChildren?.[0]
+      const text = target?.data || ''
+      return (
+        <HiddenText
+          key={key}
+          style={{
+            ...defaultBaseFontStyle,
+            ...baseFontStyle
+          }}
+        >
+          {text}
+        </HiddenText>
+      )
+    }
+
+    // 标签样式
+    if (className?.includes('tag')) {
+      const target = rawChildren?.[0]
+      const text = target?.data || ''
+      return (
+        <TagText
+          key={key}
+          style={{
+            ...defaultBaseFontStyle,
+            ...baseFontStyle
+          }}
+        >
+          {text}
+        </TagText>
+      )
+    }
+
+    // 表情包
+    if (style.includes(SPAN_MARK.emoji)) {
+      const target = rawChildren?.[0]
+      const text = target?.data || ''
+      if (text) {
+        const { fontSize } = formatStyles(style) as { fontSize?: number }
+        return (
+          <EmojiText
+            index={Number(text)}
+            size={Math.max(15, fontSize || Number(rakuenStore.setting.bigEmojiSize))}
+          />
+        )
+      }
+    }
+  } catch (error) {
+    logger.info(TAG, 'generateConfig', error)
+  }
+
+  return children
+}

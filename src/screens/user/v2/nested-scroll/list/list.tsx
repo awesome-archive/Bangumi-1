@@ -1,0 +1,86 @@
+/*
+ * @Author: czy0729
+ * @Date: 2019-05-25 22:57:29
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-04-23 23:54:13
+ */
+import React, { useCallback, useMemo } from 'react'
+import { ListView } from '@components'
+import { ITEM_COLLECTIONS_HEIGHT } from '@_'
+import { keyExtractor } from '@utils'
+import { memo } from '@utils/decorators'
+import { FROZEN_FN } from '@constants'
+import Item from '../../component/item'
+import Pagination from '../../component/pagination'
+import ToolBar from '../../component/tool-bar'
+import { COMPONENT_MAIN, DEFAULT_PROPS } from './ds'
+
+import type { ListViewProps } from '@components'
+
+const List = memo(
+  ({
+    styles,
+    forwardRef,
+    list = true,
+    page = 0,
+    data,
+    numColumns,
+    userPagination = false,
+    onScroll,
+    onHeaderRefresh = FROZEN_FN,
+    onFooterRefresh = FROZEN_FN
+  }) => {
+    const { page: pageCurrent, pageTotal } = data.pagination
+
+    const passProps: Pick<
+      ListViewProps,
+      'contentContainerStyle' | 'ListFooterComponent' | 'onHeaderRefresh' | 'onFooterRefresh'
+    > = {
+      contentContainerStyle: list ? styles.list : styles.grid
+    }
+    if (userPagination) {
+      passProps.ListFooterComponent = <Pagination pageTotal={pageTotal} />
+    } else {
+      passProps.onHeaderRefresh = onHeaderRefresh
+      passProps.onFooterRefresh = onFooterRefresh
+    }
+
+    const elListHeaderComponent = useMemo(
+      () => <ToolBar page={page} pageCurrent={pageCurrent} pageTotal={pageTotal} />,
+      [page, pageCurrent, pageTotal]
+    )
+
+    const handleRef = useCallback(
+      (ref: { scrollToIndex: any; scrollToOffset: any }) => {
+        forwardRef(ref, page)
+      },
+      [forwardRef, page]
+    )
+
+    const handleRenderItem = useCallback(
+      ({ item, index }) => <Item item={item} index={index} page={page} />,
+      [page]
+    )
+
+    return (
+      <ListView
+        keyExtractor={keyExtractor}
+        ref={handleRef}
+        nestedScrollEnabled
+        data={data}
+        numColumns={numColumns}
+        estimatedItemHeight={list ? ITEM_COLLECTIONS_HEIGHT : 0}
+        keyboardDismissMode='on-drag'
+        scrollEventThrottle={16}
+        ListHeaderComponent={elListHeaderComponent}
+        renderItem={handleRenderItem}
+        onScroll={onScroll}
+        {...passProps}
+      />
+    )
+  },
+  DEFAULT_PROPS,
+  COMPONENT_MAIN
+)
+
+export default List

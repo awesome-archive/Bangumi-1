@@ -1,0 +1,56 @@
+/*
+ * @Author: czy0729
+ * @Date: 2025-04-11 16:32:54
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-07-24 18:13:44
+ */
+import React, { useCallback, useMemo } from 'react'
+import { observer } from 'mobx-react'
+import { Heatmap, SwitchPro } from '@components'
+import { ItemSetting } from '@_'
+import { t } from '@utils/fetch'
+import commonStyles from '../../styles'
+import { useAsyncSwitchSetting } from '../../hooks'
+import { getYuqueThumbs } from '../../utils'
+
+import type { Props } from './types'
+
+function ItemSettingSwitch({
+  setting,
+  filter = '',
+  thumb,
+  hd = '',
+  information = '',
+  reverse = false
+}: Props) {
+  const { value, handleSwitch } = useAsyncSwitchSetting(setting)
+  const current = reverse ? !value : value
+
+  const handleSyncPress = useCallback(() => {
+    handleSwitch()
+
+    t('设置.切换', {
+      title: hd,
+      checked: !current
+    })
+  }, [current, handleSwitch, hd])
+
+  const elFt = useMemo(
+    () => <SwitchPro style={commonStyles.switch} value={current} onSyncPress={handleSyncPress} />,
+    [current, handleSyncPress]
+  )
+
+  return (
+    <ItemSetting
+      hd={hd}
+      information={information}
+      ft={elFt}
+      filter={filter}
+      thumb={thumb ? getYuqueThumbs(thumb) : undefined}
+    >
+      <Heatmap id='设置.切换' title={hd} />
+    </ItemSetting>
+  )
+}
+
+export default observer(ItemSettingSwitch)

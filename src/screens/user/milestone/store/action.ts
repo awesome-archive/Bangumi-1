@@ -1,0 +1,85 @@
+/*
+ * @Author: czy0729
+ * @Date: 2024-10-10 11:54:02
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-08-29 04:55:56
+ */
+import { MODEL_COLLECTION_STATUS, MODEL_SUBJECT_TYPE } from '@constants'
+import Fetch from './fetch'
+
+import type { CollectionsOrder, CollectionStatusCn, DeepPartial, SubjectTypeCn } from '@types'
+import type { ORDER_DS } from '../ds'
+import type { STATE } from './ds'
+
+export default class Action extends Fetch {
+  fetchCollections = (refresh: boolean = false) => {
+    setTimeout(() => {
+      if (refresh || !this.collections._loaded) this.fetchUserCollections(true)
+    }, 0)
+  }
+
+  selectSubjectType = (title: SubjectTypeCn) => {
+    this.setState({
+      subjectType: MODEL_SUBJECT_TYPE.getLabel(title),
+      tag: ''
+    })
+    this.fetchCollections()
+    this.save()
+  }
+
+  selectType = (title: CollectionStatusCn) => {
+    this.setState({
+      type: MODEL_COLLECTION_STATUS.getValue(title.replace(/听|读|玩/g, '看')),
+      tag: ''
+    })
+    this.fetchCollections()
+    this.save()
+  }
+
+  selectOrder = (title: (typeof ORDER_DS)[number]) => {
+    let order: CollectionsOrder = ''
+    if (title === '发布') {
+      order = 'date'
+    } else if (title === '评价') {
+      order = 'rate'
+    }
+
+    this.setState({
+      order
+    })
+    this.fetchCollections(true)
+    this.save()
+  }
+
+  selectTag = (title: string = '') => {
+    const tag = (title === '全部' ? '' : title.split(' (')?.[0]) || ''
+    this.setState({
+      tag
+    })
+    this.fetchCollections(true)
+    this.save()
+  }
+
+  selectScore = (title: string = '全部') => {
+    this.setState({
+      score: title || '全部'
+    })
+    this.save()
+  }
+
+  setOptions = (key: keyof typeof STATE, value?: boolean | number | string) => {
+    if (typeof value !== 'undefined') {
+      this.setState({
+        [key]: value
+      } as DeepPartial<typeof STATE>)
+    } else {
+      const prev = this.state[key]
+      if (typeof prev === 'boolean') {
+        this.setState({
+          [key]: !prev
+        } as DeepPartial<typeof STATE>)
+      }
+    }
+    this.save()
+  }
+}

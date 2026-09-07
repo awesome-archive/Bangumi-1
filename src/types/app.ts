@@ -1,0 +1,289 @@
+/*
+ * @Author: czy0729
+ * @Date: 2022-06-27 13:12:28
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-09-03 23:26:25
+ *
+ * 客户端特定数据结构
+ */
+import type { AppIcons, IoniconsIcons, MaterialIcons } from '@components/@'
+import type { SITES } from '@constants'
+import type { EventKeys } from '@constants'
+import type { Id, SubjectId, UserId } from './bangumi'
+import type { NavigationPushType, Paths } from './route'
+import type { DeepPartial, Expand, Override, ViewStyle } from './utils'
+
+/** 图标 (iOS Style) */
+export type IoniconsIconsNames = keyof typeof IoniconsIcons
+
+/** 图标 (Material Style) */
+export type MaterialIconsNames = keyof typeof MaterialIcons
+
+/** 图标 (Iconfont Style) */
+export type AppIconsNames = keyof typeof AppIcons
+
+/** 所有图标 */
+export type IconfontNames =
+  | AppIconsNames
+  | IoniconsIconsNames
+  | `md-${MaterialIconsNames}`
+  | 'home'
+  | 'setting'
+  | 'trophy'
+  | 'sunny'
+  | 'moon'
+  | 'star'
+  | 'crown'
+  | 'yuque'
+  | 'github'
+
+/** react-navigation 事件对象 */
+export type NavigationEvent = {
+  type: string
+  target?: string
+  canPreventDefault?: boolean
+  defaultPrevented?: boolean
+  data?: unknown
+  preventDefault?: () => void
+}
+
+/** react-navigation 路由对象 */
+export type Navigation = {
+  /** 前进 */
+  push: NavigationPushType
+
+  /** 跳转到 */
+  navigate: NavigationPushType
+
+  /** 替换 */
+  replace: (path: Paths, params?: object) => void
+
+  /** 后退 */
+  goBack: () => void
+
+  /** 出栈到顶 */
+  popToTop: () => void
+
+  /** 获取根部路由状态 */
+  getRootState: () => { index: number } | undefined
+
+  /** 获取路由状态 */
+  getState: () => {
+    index?: number
+    routes?: {
+      key: string
+      name: string
+      params: Record<string, any>
+    }[]
+  }
+
+  /** 动态设置路由参数 */
+  setOptions: (params?: object) => void
+
+  /** 订阅 */
+  addListener: (
+    eventType: string,
+    callback: (event?: NavigationEvent) => void
+  ) => { remove: () => void }
+
+  /** 触发订阅事件 */
+  emit: (event: NavigationEvent) => void
+
+  /** @deprecated 获取参数 */
+  getParam?: <T = unknown>(key: string, defaultValue?: T) => T | undefined
+
+  /** @deprecated 设置参数 */
+  setParams?: (params: object) => void
+
+  /** 获取当前路由信息 */
+  getCurrentRoute?: () => {
+    key: string
+    name: string
+    params: Record<string, any>
+  }
+
+  /** 是否当前页面 */
+  isFocused?: () => boolean
+}
+
+/** 带 navigation 定义的 props */
+export type NavigationProps<
+  T = {
+    routeName?: string
+  }
+> = Override<
+  {
+    navigation: Navigation
+    route?: {
+      key: string
+      name: string
+      params: T
+    }
+  },
+  T
+>
+
+export type WithNavigation<T = {}> = Override<
+  {
+    navigation?: Navigation
+  },
+  T
+>
+
+/** 埋点名称 */
+export type { EventKeys }
+
+/** 埋点对象 */
+export type EventType = {
+  id?: EventKeys
+  data?: {
+    [key: string]: string | number | boolean
+  }
+}
+
+/** 允许配置 readonly 的数组 */
+export type ListArray<T = unknown> = T extends readonly unknown[] ? readonly T[number][] : T[]
+
+/** 列表对象 */
+export type ListEmpty<T = unknown> = Expand<{
+  list: ListArray<T>
+  pagination?: {
+    page: number
+    pageTotal: number
+  }
+  _list?: T[] | readonly T[]
+  _loaded?: Loaded
+  _filter?: string
+}>
+
+/** T: 传入 state 的所有 keys, 约束把所有 key 都可以通过 this[key] 访问 */
+export type StoreConstructor<T extends Record<string, unknown>> = {
+  [K in keyof T]: T[K]
+} & {
+  state: T
+}
+
+/** @todo */
+export type StoreType = unknown
+
+/** @todo */
+export type StoreInstance = unknown
+
+/** 允许显示的源头 */
+export type Sites = (typeof SITES)[number]
+
+/** data._loaded */
+export type Loaded = boolean | number
+
+/** 自定义源头数据 */
+export type Origin = DeepPartial<{
+  base: Record<
+    string,
+    {
+      active: 0 | 1
+      sort: number
+    }
+  >
+  custom: Record<
+    'anime' | 'hanime' | 'manga' | 'wenku' | 'music' | 'game' | 'real',
+    {
+      id: string
+      uuid: string
+      name: string
+      url: string
+      sort: number
+      active: 0 | 1
+    }[]
+  >
+}>
+
+/** 自定义跳转数据项 */
+export type ActionsItem = {
+  uuid: Id
+  name: string
+  url: string
+  sort: Id
+  active: number
+}[]
+
+/** 自定义跳转数据 */
+export type Actions = Record<SubjectId, ActionsItem>
+
+/** 翻译结果 */
+export type TranslateResult = {
+  /** 原话 */
+  src: string
+
+  /** 译话 */
+  dst: string
+}[]
+
+/** 锐评项 */
+export type CompletionItem = {
+  text: string
+  userId: UserId
+  _loaded: Loaded
+}
+
+/** 携带项 */
+export type WithItem<T> = {
+  /** 数据项 */
+  item?: T
+}
+
+/** 携带索引 */
+export type WithIndex<T> = Override<
+  T,
+  {
+    /** 索引 */
+    index?: number
+  }
+>
+
+/** 携带埋点 */
+export type WithEvent<T> = Override<
+  T,
+  {
+    /** 埋点数据 */
+    event?: EventType
+  }
+>
+
+/** 携带容器样式 */
+export type WithViewStyles<T = unknown> = Override<
+  T,
+  {
+    /** 容器样式 */
+    style?: ViewStyle
+  }
+>
+
+/** 发现页菜单项 */
+export type MenuItem = {
+  /** 目前允许设置的按钮 ID */
+  key: Paths | 'Open' | 'Netabare' | 'Split' | 'Link' | 'Cancel' | 'Save'
+
+  /** 按钮名称 */
+  name: string
+
+  /** 按钮上渲染的文字 */
+  text?: string
+
+  /** 按钮图标 (数组为两个图标特定的样式布置) */
+  icon?: IconfontNames | [IconfontNames, IconfontNames]
+
+  /** 按钮图标或文字的大小 */
+  size?: number
+
+  /** 是否在 WEB 上显示 (默认 true) */
+  web?: boolean
+
+  /** 是否在 iOS 上显示 (默认 true) */
+  ios?: boolean
+
+  /** 跳转页面是否需要登录 */
+  login?: boolean
+}
+
+/** 发现页菜单映射 */
+export type MenuMap = Partial<Record<MenuItem['key'], MenuItem>>

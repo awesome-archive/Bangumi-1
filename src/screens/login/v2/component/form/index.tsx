@@ -1,0 +1,362 @@
+/*
+ * @Author: czy0729
+ * @Date: 2019-07-17 09:28:58
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-06-21 16:00:09
+ */
+import React from 'react'
+import { View } from 'react-native'
+import { observer } from 'mobx-react'
+import {
+  ActivityIndicator,
+  Button,
+  Flex,
+  Heatmap,
+  Iconfont,
+  Input,
+  Mesume,
+  RNImage,
+  Text,
+  Touchable
+} from '@components'
+import { _ } from '@stores'
+import { alert } from '@utils'
+import { t } from '@utils/fetch'
+import { FROZEN_FN, WEB } from '@constants'
+import i18n from '@constants/i18n'
+import InputPassword from '../input-password'
+import { memoStyles } from './styles'
+
+import type { Props } from './types'
+
+class Form extends React.Component<Props> {
+  static defaultProps = {
+    host: '',
+    forwardRef: FROZEN_FN,
+    onGetCaptcha: FROZEN_FN,
+    onFocus: FROZEN_FN,
+    onBlur: FROZEN_FN,
+    onChange: FROZEN_FN,
+    onSelect: FROZEN_FN,
+    onUAChange: FROZEN_FN,
+    onLogin: FROZEN_FN
+  }
+
+  state = {
+    config: false,
+    focusPassword: false
+  }
+
+  private _passwordRef: any
+  private _codeRef: any
+
+  componentDidMount() {
+    const { email, password, captcha, networkFailed } = this.props
+    if (email && password && !captcha) {
+      try {
+        if (!networkFailed && typeof this?._codeRef?.inputRef?.focus === 'function') {
+          this._codeRef.inputRef.focus()
+        }
+      } catch {}
+    }
+
+    if (networkFailed) this.showConfig()
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    if (!prevProps.networkFailed && this.props.networkFailed && !this.state.config) {
+      this.showConfig()
+    }
+  }
+
+  showConfig = () => {
+    this.setState({
+      config: true
+    })
+  }
+
+  onFocusPassword = () => {
+    this.props.onFocus()
+    this.setState({
+      focusPassword: true
+    })
+  }
+
+  onBlurPassword = () => {
+    this.props.onBlur()
+    this.setState({
+      focusPassword: false
+    })
+  }
+
+  onNotice = () => {
+    alert(
+      `勾选后，${i18n.login()}成功后会自动使用上一次上传的设置覆盖本地设置。\n\n若你在多设备上使用过本客户端，请注意定期到设置手动上传设置，以避免同步后丢失最近修改过的设置。`
+    )
+
+    t('登陆.配置提示', {
+      name: 'host'
+    })
+  }
+
+  onNoticeHost = () => {
+    alert(
+      `三个选项都是同一个站点的不同域名，只是具体服务器位置不同。 \n\n${i18n.login()}建议优先使用 bgm.tv，出现问题再尝试 bangumi.tv，最后尝试 chii.in。`
+    )
+
+    t('登陆.配置提示', {
+      name: 'host'
+    })
+  }
+
+  onNoticeUA = () => {
+    alert(
+      `假如您频繁掉授权状态，不妨试试把这个选项勾上，通常${i18n.login()}状态生存时间为7天。 \n\n这是个不稳定的选项，若${i18n.login()}正常不建议勾上，可能会遇到预测不能的状况。`
+    )
+
+    t('登陆.配置提示', {
+      name: 'ua'
+    })
+  }
+
+  onSubmitEditingEmail = () => {
+    try {
+      if (typeof this?._passwordRef?.inputRef?.focus === 'function') {
+        this._passwordRef.inputRef.focus()
+      }
+    } catch {}
+  }
+
+  onSubmitEditingPassword = () => {
+    try {
+      if (typeof this?._codeRef?.inputRef?.focus === 'function') {
+        this._codeRef.inputRef.focus()
+      }
+    } catch {}
+  }
+
+  renderForm() {
+    const {
+      email,
+      password,
+      captcha,
+      base64,
+      networkFailed,
+      forwardRef,
+      onGetCaptcha,
+      onFocus,
+      onBlur,
+      onChange,
+      onLogin
+    } = this.props
+    return (
+      <>
+        <Flex style={_.mt.lg}>
+          <Flex.Item>
+            <Input
+              style={this.styles.input}
+              value={email}
+              placeholder='Email'
+              autoComplete='username'
+              textContentType='username'
+              returnKeyType='next'
+              onFocus={onFocus}
+              onBlur={onBlur}
+              onChange={evt => onChange(evt, 'email')}
+              onSubmitEditing={this.onSubmitEditingEmail}
+            />
+          </Flex.Item>
+        </Flex>
+        <Flex style={_.mt.md}>
+          <Flex.Item>
+            <InputPassword
+              forwardRef={ref => (this._passwordRef = ref)}
+              style={this.styles.input}
+              value={password}
+              onFocus={this.onFocusPassword}
+              onBlur={this.onBlurPassword}
+              onChange={evt => onChange(evt, 'password')}
+              onSubmitEditing={this.onSubmitEditingPassword}
+            />
+          </Flex.Item>
+        </Flex>
+        <Flex style={_.mt.md}>
+          <Flex.Item>
+            <Input
+              ref={ref => {
+                forwardRef(ref)
+                this._codeRef = ref
+              }}
+              style={this.styles.input}
+              value={captcha}
+              placeholder='验证码'
+              returnKeyType='done'
+              returnKeyLabel={i18n.login()}
+              onFocus={onFocus}
+              onBlur={onBlur}
+              onChange={evt => onChange(evt, 'captcha')}
+              onSubmitEditing={onLogin}
+            />
+          </Flex.Item>
+          <Touchable style={this.styles.touchCaptcha} onPress={onGetCaptcha}>
+            <Flex style={this.styles.captchaContainer} justify='center'>
+              {base64 ? (
+                <RNImage
+                  style={this.styles.captcha}
+                  source={{
+                    uri: base64
+                  }}
+                />
+              ) : networkFailed ? (
+                <Iconfont name='md-refresh' size={20} />
+              ) : (
+                <ActivityIndicator size='small' color={_.colorIcon} />
+              )}
+            </Flex>
+          </Touchable>
+        </Flex>
+      </>
+    )
+  }
+
+  renderConfig() {
+    const { navigation, isSyncSetting, onSyncSettingChange } = this.props
+    const { config } = this.state
+    if (!config) {
+      return (
+        <View style={this.styles.config}>
+          <Touchable style={this.styles.touch} onPress={this.showConfig}>
+            <Flex>
+              <Text type='sub' size={12}>
+                {i18n.login()}配置
+              </Text>
+              <Iconfont name='md-navigate-next' />
+            </Flex>
+            <Heatmap id='登陆.切换域名' />
+            <Heatmap bottom={-32} id='登陆.配置提示' transparent />
+          </Touchable>
+        </View>
+      )
+    }
+
+    return (
+      <View style={this.styles.config}>
+        {/* <Flex style={_.mt._xs}>
+          <Flex.Item>
+            <Popover style={this.styles.touch} data={HOST_DS} onSelect={onSelect}>
+              <Flex>
+                <Text type='sub' size={12}>
+                  使用 {host} 进行{i18n.login()}
+                </Text>
+                <Iconfont name='md-keyboard-arrow-down' />
+              </Flex>
+            </Popover>
+          </Flex.Item>
+          <Touchable style={this.styles.touchIcon} onPress={this.onNoticeHost}>
+            <Flex style={this.styles.icon} justify='center'>
+              <Iconfont name='md-info-outline' size={18} />
+            </Flex>
+          </Touchable>
+        </Flex> */}
+        {/* <Flex style={_.mt._xs}>
+          <Flex.Item>
+            <Touchable style={this.styles.touch} onPress={onUAChange}>
+              <Flex>
+                <Iconfont
+                  name={isCommonUA ? 'md-radio-button-on' : 'md-radio-button-off'}
+                  color={isCommonUA ? _.colorMain : _.colorSub}
+                  size={18}
+                />
+                <Text style={_.ml.xs} type='sub' size={12}>
+                  使用固定UA{i18n.login()} (频繁掉线可尝试勾选)
+                </Text>
+              </Flex>
+            </Touchable>
+          </Flex.Item>
+          <Touchable style={this.styles.touchIcon} onPress={this.onNoticeUA}>
+            <Flex style={this.styles.icon} justify='center'>
+              <Iconfont name='md-info-outline' size={18} />
+            </Flex>
+          </Touchable>
+        </Flex> */}
+        <Flex style={_.mt._xs}>
+          <Flex.Item>
+            <Touchable style={this.styles.touch} onPress={onSyncSettingChange}>
+              <Flex>
+                <Iconfont
+                  name={isSyncSetting ? 'md-radio-button-on' : 'md-radio-button-off'}
+                  color={isSyncSetting ? _.colorMain : _.colorSub}
+                  size={18}
+                />
+                <Text style={_.ml.xs} type='sub' size={12}>
+                  {i18n.login()}后同步云端设置
+                </Text>
+              </Flex>
+            </Touchable>
+          </Flex.Item>
+          <Touchable style={this.styles.touchIcon} onPress={this.onNotice}>
+            <Flex style={this.styles.icon} justify='center'>
+              <Iconfont name='md-info-outline' size={18} />
+            </Flex>
+          </Touchable>
+        </Flex>
+        <Touchable
+          style={[_.mt.xs, _.mb.sm]}
+          onPress={() => {
+            navigation.push('Setting', {
+              open: 'Worker'
+            })
+          }}
+        >
+          <Text type='sub' size={12} underline>
+            遇到连接问题？点击设置代理
+          </Text>
+        </Touchable>
+      </View>
+    )
+  }
+
+  renderError() {
+    const { navigation, info, networkFailed } = this.props
+    const isError = info.includes('错误') || info.includes('TypeError')
+    return (
+      <Text
+        style={_.mt.md}
+        size={12}
+        lineHeight={16}
+        type={networkFailed ? 'danger' : 'sub'}
+        onPress={() => {
+          if (isError) navigation.push('Login')
+        }}
+      >
+        {info}
+      </Text>
+    )
+  }
+
+  render() {
+    const { loading, onLogin } = this.props
+    const { focusPassword } = this.state
+    return (
+      <View style={_.container.column}>
+        <View style={this.styles.form}>
+          <Flex justify='center'>
+            <Mesume index={focusPassword ? 4 : undefined} />
+          </Flex>
+          {this.renderForm()}
+          {!WEB && this.renderConfig()}
+          <Button style={_.mt.lg} type='main' shadow loading={loading} onPress={onLogin}>
+            {i18n.login()}
+          </Button>
+          {this.renderError()}
+        </View>
+      </View>
+    )
+  }
+
+  get styles() {
+    return memoStyles()
+  }
+}
+
+export default observer(Form)

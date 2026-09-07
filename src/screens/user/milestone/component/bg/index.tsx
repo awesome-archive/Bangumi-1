@@ -1,0 +1,32 @@
+/*
+ * @Author: czy0729
+ * @Date: 2024-10-10 13:04:01
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-07-23 06:27:06
+ */
+import React from 'react'
+import { observer } from 'mobx-react'
+import { LinearGradient } from 'expo-linear-gradient'
+import { _, useStore } from '@stores'
+import { COMPONENT } from './ds'
+
+import type { Ctx } from '../../types'
+
+function Bg() {
+  const { $ } = useStore<Ctx>(COMPONENT)
+
+  if (!$.state.bg) return null
+
+  return (
+    <LinearGradient
+      style={_.absoluteFill}
+      colors={_.select(
+        ['rgb(255, 255, 255)', 'rgb(255, 244, 244)', 'rgb(255, 233, 233)'],
+        ['rgb(0, 0, 0)', 'rgb(15, 15, 20)', _.colorDarkModeLevel2]
+      )}
+      locations={[0, 0.5, 1]}
+    />
+  )
+}
+
+export default observer(Bg)

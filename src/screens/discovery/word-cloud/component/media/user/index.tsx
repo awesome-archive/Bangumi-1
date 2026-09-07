@@ -1,0 +1,75 @@
+/*
+ * @Author: czy0729
+ * @Date: 2024-11-01 23:25:06
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-07-16 22:07:44
+ */
+import React from 'react'
+import { View } from 'react-native'
+import { observer } from 'mobx-react'
+import { Avatar, BLURVIEW_TINT_DARK, Flex, Text } from '@components'
+import { BlurView } from '@_'
+import { _, useStore } from '@stores'
+import { IOS } from '@constants'
+import { COMPONENT } from './ds'
+import { styles } from './styles'
+
+import type { Ctx } from '../../../types'
+
+function User() {
+  const { $ } = useStore<Ctx>(COMPONENT)
+
+  if (!$.users?.userId) return null
+
+  const { userName, join, avatar, userStats } = $.users
+  const top = userName
+
+  const bottom: string[] = []
+  if (userStats?.total) bottom.push(`${userStats.total} 收藏`)
+  if (userStats?.collect) bottom.push(`${userStats.collect} 完成`)
+  if (userStats?.percent) bottom.push(`完成率 ${userStats.percent}`)
+  const bottomText = bottom.join(' · ')
+
+  const Component = IOS ? BlurView : View
+  const passProps = IOS
+    ? {
+        style: styles.container,
+        tint: BLURVIEW_TINT_DARK,
+        intensity: 64
+      }
+    : {
+        style: styles.container
+      }
+
+  return (
+    <Component {...passProps}>
+      <Flex align='start'>
+        <Avatar src={avatar} size={styles.body.height} radius={_.radiusMd - 2} />
+        <Flex.Item>
+          <Flex style={styles.body} direction='column' justify='between' align='start'>
+            <Text type='__plain__' bold numberOfLines={2}>
+              {top}
+              {'  '}
+              <Text style={styles.opacity} type='__plain__' size={12} lineHeight={14} bold>
+                {join}
+              </Text>
+            </Text>
+            {!!bottomText && bottomText !== top && (
+              <Text
+                style={[_.mt.xs, styles.opacity]}
+                type='__plain__'
+                size={12}
+                bold
+                numberOfLines={1}
+              >
+                {bottomText}
+              </Text>
+            )}
+          </Flex>
+        </Flex.Item>
+      </Flex>
+    </Component>
+  )
+}
+
+export default observer(User)

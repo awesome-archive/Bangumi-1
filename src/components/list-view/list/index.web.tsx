@@ -1,0 +1,128 @@
+/*
+ * @Author: czy0729
+ * @Date: 2021-11-30 04:24:34
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-07-28 15:42:18
+ */
+import React, { useCallback, useMemo, useRef } from 'react'
+import { View } from 'react-native'
+import { observer } from 'mobx-react'
+import { _ } from '@stores'
+import { Flex } from '../../flex'
+import { StorybookScroll } from '../../storybook'
+import { styles } from './styles'
+
+import type { ReactNode } from '@types'
+import type { ListPropsWeb } from './types'
+
+function List<ItemT>({
+  contentContainerStyle,
+  keyExtractor,
+  sections,
+  data,
+  pagination,
+  numColumns,
+  scrollEnabled,
+  showFooter,
+  ListHeaderComponent,
+  renderSectionHeader,
+  renderItem,
+  renderFooter,
+  inverted,
+  onFooterRefresh,
+  onScroll
+}: ListPropsWeb<ItemT>) {
+  const pending = useRef(false)
+
+  const handleFooterRefresh = useCallback(async () => {
+    if (typeof onFooterRefresh !== 'function' || pending.current) return
+
+    try {
+      pending.current = true
+      if (pagination?.page < pagination?.pageTotal) await onFooterRefresh()
+    } catch {}
+
+    pending.current = false
+  }, [pagination, onFooterRefresh])
+
+  const elListHeader = useMemo(
+    () =>
+      React.isValidElement(ListHeaderComponent) ? (
+        ListHeaderComponent
+      ) : typeof ListHeaderComponent === 'function' ? (
+        <ListHeaderComponent />
+      ) : null,
+    [ListHeaderComponent]
+  )
+
+  let content: ReactNode
+  if (sections) {
+    content = sections.map((section: { title: string; data: ItemT[] }, index: number) => (
+      <View key={`section-${index}`} style={_.container.block}>
+        {renderSectionHeader({ section })}
+        {section.data
+          .map((item: ItemT) => {
+            const element = renderItem({
+              item,
+              section
+            })
+
+            if (React.isValidElement(element)) {
+              const key =
+                typeof keyExtractor === 'function'
+                  ? `section-item-${keyExtractor(item, index)}`
+                  : `section-item-${index}`
+
+              return React.cloneElement(element, {
+                key
+              })
+            }
+            return element ?? null
+          })
+          .filter(Boolean)}
+      </View>
+    ))
+  } else {
+    content = data
+      .map((item: ItemT, index: number) => {
+        const element = renderItem({
+          item,
+          index
+        })
+        if (React.isValidElement(element)) {
+          const key =
+            typeof keyExtractor === 'function'
+              ? `list-item-${keyExtractor(item, index)}`
+              : `list-item-${index}`
+
+          return React.cloneElement(element, {
+            key
+          })
+        }
+        return element ?? null
+      })
+      .filter(item => !!item)
+  }
+
+  return (
+    <StorybookScroll
+      style={contentContainerStyle}
+      scrollEnabled={scrollEnabled}
+      inverted={inverted}
+      onScroll={onScroll}
+      onFooterRefresh={handleFooterRefresh}
+    >
+      {elListHeader}
+      {numColumns > 1 ? (
+        <Flex style={styles.columnsContainer} wrap='wrap'>
+          {content}
+        </Flex>
+      ) : (
+        content
+      )}
+      {showFooter !== false && renderFooter}
+    </StorybookScroll>
+  )
+}
+
+export default observer(List)

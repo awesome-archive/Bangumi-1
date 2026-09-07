@@ -1,0 +1,160 @@
+/*
+ * @Author: czy0729
+ * @Date: 2023-01-12 06:39:55
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-06-07 20:35:32
+ */
+import React, { useCallback, useMemo } from 'react'
+import { View } from 'react-native'
+import { Flex, Heatmap, Iconfont, Image, Link, ScrollView, Squircle, Text } from '@components'
+import { InView, PreventTouchPlaceholder, SectionTitle } from '@_'
+import { _ } from '@stores'
+import { date, showImageViewer, stl } from '@utils'
+import { memo } from '@utils/decorators'
+import { useHorizontalLazy } from '@utils/hooks'
+import { FROZEN_FN } from '@constants'
+import { TITLE_ANITABI } from '../../ds'
+import IconHidden from '../icon/hidden'
+import { COMPONENT_MAIN, DEFAULT_PROPS, THUMB_HEIGHT, THUMB_WIDTH } from './ds'
+
+import type { AnitabiData } from '../../types'
+
+const Anitabi = memo(
+  ({
+    styles,
+    showAnitabi = true,
+    subjectId = 0,
+    data = {
+      city: '',
+      pointsLength: 0,
+      imagesLength: 0,
+      litePoints: []
+    } as AnitabiData,
+    onSwitchBlock = FROZEN_FN
+  }) => {
+    const { city, pointsLength, imagesLength, litePoints } = data
+
+    const { list, onScroll } = useHorizontalLazy(
+      litePoints,
+      Math.floor(_.window.contentWidth / THUMB_WIDTH) + 1
+    )
+
+    const memoThumbs = useMemo(
+      () =>
+        list
+          .filter(item => item.image)
+          .map(item => ({
+            url: item?.image?.replace('h160', 'h360')
+          })),
+      [list]
+    )
+
+    const elRight = useMemo(
+      () =>
+        showAnitabi === false ? (
+          <IconHidden name={TITLE_ANITABI} value='showAnitabi' />
+        ) : (
+          showAnitabi !== -1 && (
+            <Link
+              style={styles.touch}
+              path={`https://anitabi.cn/map?bangumiId=${subjectId}`}
+              eventId='条目.跳转'
+              eventData={{
+                to: 'anitabi.cn',
+                from: TITLE_ANITABI,
+                subjectId
+              }}
+            >
+              <Flex>
+                <Text type='sub'>巡礼地图</Text>
+                <Iconfont style={_.ml.xs} name='md-open-in-new' size={17} />
+              </Flex>
+              <Heatmap id='条目.跳转' from={TITLE_ANITABI} />
+            </Link>
+          )
+        ),
+      [showAnitabi, styles.touch, subjectId]
+    )
+
+    const handleToggle = useCallback(() => onSwitchBlock('showAnitabi'), [onSwitchBlock])
+
+    return (
+      <InView style={stl(styles.container, !showAnitabi && styles.containerNotShow)}>
+        <SectionTitle
+          style={_.container.wind}
+          right={elRight}
+          icon={!showAnitabi && 'md-navigate-next'}
+          splitStyles
+          onPress={handleToggle}
+        >
+          {TITLE_ANITABI}
+        </SectionTitle>
+
+        {showAnitabi && (
+          <>
+            <Flex style={styles.desc}>
+              <Text size={11}>取景城市: </Text>
+              <Text size={11} bold>
+                {city}{' '}
+              </Text>
+              <Text type='sub' size={11}>
+                {' '}
+                ({pointsLength} 个地标 、{imagesLength} 张截图)
+              </Text>
+            </Flex>
+
+            <ScrollView
+              style={_.mt.md}
+              contentContainerStyle={_.container.wind}
+              horizontal
+              onScroll={onScroll}
+            >
+              {list.map((item, index: number) => (
+                <View key={item.id} style={_.mr.sm}>
+                  <Squircle width={THUMB_WIDTH} height={THUMB_HEIGHT} radius={_.radiusXs}>
+                    {item.image ? (
+                      <Image
+                        style={styles.image}
+                        src={item.image}
+                        size={THUMB_WIDTH}
+                        height={THUMB_HEIGHT}
+                        onPress={() => {
+                          showImageViewer(memoThumbs, Math.min(index, memoThumbs.length - 1))
+                        }}
+                      />
+                    ) : (
+                      <Flex style={styles.void} direction='column' justify='center'>
+                        <Text type='sub' size={16} bold>
+                          {index + 1}
+                        </Text>
+                        <Text style={_.mt.xs} type='sub' size={11} bold>
+                          尚无截图
+                        </Text>
+                      </Flex>
+                    )}
+                  </Squircle>
+                  <Text style={styles.title} size={11} bold numberOfLines={2}>
+                    {item.cn || item.name}
+                  </Text>
+                  <Text style={styles.sub} type='sub' size={11} bold numberOfLines={1}>
+                    {item.ep || item.s
+                      ? `${item.ep ? `EP${item.ep} ` : ''}${item.s ? date('i:s', item.s) : ''} · #${
+                          index + 1
+                        }`
+                      : `#${index + 1}`}
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+
+            <PreventTouchPlaceholder />
+          </>
+        )}
+      </InView>
+    )
+  },
+  DEFAULT_PROPS,
+  COMPONENT_MAIN
+)
+
+export default Anitabi

@@ -1,0 +1,265 @@
+/*
+ * @Author: czy0729
+ * @Date: 2021-02-23 10:40:56
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-08-26 11:32:30
+ */
+import Crypto from '@utils/thirdParty/crypto'
+import { WEB } from '../device'
+
+/** 加载 */
+export const TEXT_REFRESHING = '加载中...'
+
+/** 失败 */
+export const TEXT_FAIL = '居然失败了 =.=!'
+
+/** 没有更多 */
+export const TEXT_NO_MORE = '到底啦'
+
+/** 空 */
+export const TEXT_EMPTY = '好像什么都没有'
+
+/** 敏感提示 */
+export const TEXT_18X = `好像什么都没有\n可能需要你到网页端的设置页面\n打开「显示受限条目内容」设置`
+
+/** 找番剧静态数据最后更新时间 */
+export const TEXT_UPDATE_ANIME = '2026-07-13'
+
+/** 找游戏、ADV 静态数据最后更新时间 */
+export const TEXT_UPDATE_GAME = '2024-07-14'
+
+/** 找漫画最后更新时间 */
+export const TEXT_UPDATE_MANGA = '2024-09-23'
+
+/** 本地整合目录最后更新时间 */
+export const TEXT_UPDATE_CATALOGS = '2026-04-11'
+
+/** 赞助者最后更新时间 */
+export const TEXT_UPDATE_SPONSOR = '2026-04-14'
+
+/** 分类排名更新时间 */
+export const TEXT_UPDATE_TYPERANK = '2026-04-12'
+
+/** 找番剧 (NSFW) 静态数据最后更新时间 */
+export const TEXT_UPDATE_NSFW = '2025-11-06'
+
+/** 开发者话语最后更新时间 */
+export const TEXT_UPDATE_QIAFAN = '2026-05'
+
+/** 找条目数目 */
+export const TEXT_TOTAL = {
+  番剧: 5113,
+  游戏: 2837,
+  ADV: 3600,
+  漫画: 10622,
+  文库: 2740,
+  Hentai: 1036,
+  NSFW: 5987
+} as const
+
+/** 空格 */
+export const TEXT_SPACE = WEB ? '\u00A0' : ' '
+
+/** 中文段落开头空格 */
+export const TEXT_SECTION_INDENT = '　　'
+
+/** 菜单: 浏览器查看 */
+export const TEXT_MENU_BROWSER = '浏览器查看'
+
+/** 菜单: 网页版查看 */
+export const TEXT_MENU_SPA = '网页版查看'
+
+/** 菜单: 复制链接 */
+export const TEXT_MENU_COPY_LINK = '复制链接'
+
+/** 菜单: 复制链接 */
+export const TEXT_MENU_COPY_SHARE = '复制分享'
+
+/** 菜单: 拼图分享 */
+export const TEXT_MENU_POST_SHARE = '拼图分享'
+
+/** 菜单: 客户端网页版本分享 */
+export const TEXT_MENU_WEB_SHARE = '客户端网页版本分享'
+
+/** 菜单: 获取 APP (网页用) */
+export const TEXT_MENU_APP = '获取 APP'
+
+/** 菜单: 对应页面的设置 */
+export const TEXT_MENU_SETTING = '设置'
+
+/** 菜单: 补充说明 */
+export const TEXT_MENU_INFORMATION = '补充说明'
+
+/** 菜单: 发短信 */
+export const TEXT_MENU_PM = '发短信'
+
+/** 菜单: TA的收藏 */
+export const TEXT_MENU_COLLECT = 'TA的收藏'
+
+/** 菜单: TA的好友 */
+export const TEXT_MENU_FRIEND = 'TA的好友'
+
+/** 菜单: 谁加TA为好友 */
+export const TEXT_MENU_REV_FRIEND = '谁加TA为好友'
+
+/** 菜单: TA的人物 */
+export const TEXT_MENU_CHARACTER = 'TA的人物'
+
+/** 菜单: 加为好友 */
+export const TEXT_MENU_CONNECT = '加为好友'
+
+/** 菜单: 解除好友 */
+export const TEXT_MENU_DISCONNECT = '解除好友'
+
+/** 菜单: 移除对我的关注 */
+export const TEXT_MENU_DISCONNECT_REV = '移除对我的关注'
+
+/** 菜单: 屏蔽用户 */
+export const TEXT_MENU_BLOCK = '屏蔽用户'
+
+/** 菜单: 绝交 */
+export const TEXT_MENU_IGNORE = '绝交'
+
+/** 菜单: 报告疑虑 */
+export const TEXT_MENU_REPORT = '报告疑虑'
+
+/** 菜单: 开发调试 */
+export const TEXT_MENU_DEV = '开发调试'
+
+/** 菜单: 新主题 */
+export const TEXT_NEW_TOPIC = '新主题'
+
+/** 菜单: 分割 */
+export const TEXT_MENU_SPLIT = '一一一'
+
+/** 菜单: 左分割 */
+export const TEXT_MENU_SPLIT_LEFT = '〔'
+
+/** 菜单: 右分割 */
+export const TEXT_MENU_SPLIT_RIGHT = '〕'
+
+export function withSplit(text: string | number) {
+  return `${TEXT_MENU_SPLIT_LEFT}${text}${TEXT_MENU_SPLIT_RIGHT}`
+}
+
+/** 菜单: 工具栏 */
+export const TEXT_MENU_TOOLBAR = '工具栏'
+
+/** 菜单: 工具栏锁定上方 */
+export const TEXT_MENU_FIXED = '锁定'
+
+/** 菜单: 工具栏浮动 */
+export const TEXT_MENU_FLOAT = '浮动'
+
+/** 菜单: 加载 */
+export const TEXT_MENU_LIST_LOADED = '加　载'
+
+/** 菜单: 分页加载 */
+export const TEXT_MENU_LIST_PAGINATION = '分页加载'
+
+/** 菜单: 到底加载 */
+export const TEXT_MENU_LIST_FOOTER_REFRESH = '到底加载'
+
+/** 菜单: 布局 */
+export const TEXT_MENU_LAYOUT = '布　局'
+
+/** 菜单: 布局列表 */
+export const TEXT_MENU_LIST = '列表'
+
+/** 菜单: 布局网格 */
+export const TEXT_MENU_GRID = '网格'
+
+/** 菜单: 收藏 */
+export const TEXT_MENU_FAVOR = '收　藏'
+
+/** 菜单: 收藏显示 */
+export const TEXT_MENU_SHOW = '显示'
+
+/** 菜单: 收藏不显示 */
+export const TEXT_MENU_NOT_SHOW = '不显示'
+
+/** 菜单: 收藏只显示 */
+export const TEXT_MENU_ONLY_SHOW = '只显示'
+
+/** 菜单: 分页器 */
+export const TEXT_MENU_PAGINATION = '分页器'
+
+/** 菜单: 年份 */
+export const TEXT_MENU_YEARS = '年　份'
+
+/** 菜单: 我的空间 */
+export const TEXT_MENU_ZONE_SELF = '我的空间'
+
+/** 菜单: 我的好友 */
+export const TEXT_MENU_FRIEND_SELF = '我的好友'
+
+/** 菜单: 谁加我为好友 */
+export const TEXT_MENU_REV_FRIEND_SELF = '谁加我为好友'
+
+/** 菜单: 我的人物 */
+export const TEXT_MENU_CHARACTER_SELF = '我的人物'
+
+/** 菜单: 我的目录 */
+export const TEXT_MENU_CATALOGS_SELF = '我的目录'
+
+/** 菜单: 我的日志 */
+export const TEXT_MENU_BLOGS_SELF = '我的日志'
+
+/** 菜单: 我的词云 */
+export const TEXT_MENU_WORDCLOUD_SELF = '我的词云'
+
+/** 菜单: 我的时间线 */
+export const TEXT_MENU_USER_TIMELINE_SELF = '我的时间线'
+
+/** 菜单: 我的 netaba.re */
+export const TEXT_MENU_NETABA_SELF = '我的netaba.re'
+
+/** 菜单: TA的netaba.re */
+export const TEXT_MENU_NETABA = 'TA的netaba.re'
+
+/** 菜单: 小组成员 */
+export const TEXT_MENU_GROUP_MEMBER = '小组成员'
+
+/** 菜单: 加入小组 */
+export const TEXT_MENU_GROUP_JOIN = '加入小组'
+
+/** 菜单: 退出小组 */
+export const TEXT_MENU_GROUP_QUIT = '退出小组'
+
+/** 菜单: 时间格式 */
+export const TEXT_MENU_TIME_FORMAT = '时间格式'
+
+/** 菜单: 时间格式 (最近) */
+export const TEXT_MENU_TIME_FORMAT_LASTDATE = '最近'
+
+/** 菜单: 时间格式 (日期) */
+export const TEXT_MENU_TIME_FORMAT_REGULAR = '日期'
+
+/** 菜单: 本集讨论 */
+export const TEXT_MENU_TOPIC = '本集讨论'
+
+/** 菜单: 追踪TA的动画观看进度 */
+export const TEXT_MENU_TRACK_COLLECTIONS_TIMELINE = '追踪TA的动画观看进度'
+
+/** 菜单: 取消追踪动画观看进度 */
+export const TEXT_MENU_CANCEL_TRACK_COLLECTIONS_TIMELINE = '取消追踪动画观看进度'
+
+/** 菜单: 追踪管理 */
+export const TEXT_MENU_MANAGE_TRACK = '追踪管理'
+
+/** 标记 */
+export const TEXT_BADGES = {
+  danger: '🔴',
+  plain: '⚪',
+  primary: '🔵',
+  success: '🟢',
+  warning: '🟠',
+  yellow: '🟡',
+  purple: '🟣'
+} as const
+
+export const TEXT_NEWS_GC = Crypto.get<string>('U2FsdGVkX18vV4hUPCdJbY/D2eIpYRzHSc1F5GyFbc0=')
+
+export const TEXT_NEWS_YM = Crypto.get<string>('U2FsdGVkX19ZRKL0sfshJetA8MSbBGcTu0sbE3TWi+M=')
+
+export const TEXT_NEWS_GS = Crypto.get<string>('U2FsdGVkX18v+G1pp2YBAyzerWroRX+iJZUp875Sz8k=')

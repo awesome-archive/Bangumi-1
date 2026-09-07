@@ -1,0 +1,36 @@
+/*
+ * @Author: czy0729
+ * @Date: 2024-04-10 14:30:36
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-01-21 11:26:55
+ */
+import React from 'react'
+import { observer } from 'mobx-react'
+import { PaginationList } from '@_'
+import { useStore } from '@stores'
+import { keyExtractor, renderItem } from './utils'
+import { COMPONENT } from './ds'
+import { memoStyles } from './styles'
+
+import type { Ctx } from '../../types'
+
+function List() {
+  const { $ } = useStore<Ctx>(COMPONENT)
+
+  const styles = memoStyles()
+
+  return (
+    <PaginationList
+      keyExtractor={keyExtractor}
+      contentContainerStyle={styles.contentContainerStyle}
+      data={$.list}
+      limit={100}
+      renderItem={renderItem}
+      keyboardDismissMode='on-drag'
+      onHeaderRefresh={$.refresh}
+      onScroll={$.onScroll}
+    />
+  )
+}
+
+export default observer(List)

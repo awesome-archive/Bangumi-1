@@ -1,0 +1,58 @@
+# Bangumi32
+
+bgm.tv (Bangumi) 第三方客户端，React Native (Expo SDK 54) 项目。作者: czy0729
+
+## ⛔ 最高优先级：只改不动暂存区
+
+未经用户**当次明确要求**，绝对禁止执行任何修改暂存区或版本历史的操作：
+
+- 禁止 `git add`、`git commit`、`git push`
+- 禁止 `git stash`、`git restore --staged`、`git rm --cached` 等一切触碰索引的命令
+- 所有改动只停留在工作区（unstaged），暂存与否完全由用户自己决定
+- 用户要求"审查暂存代码"时，只读 diff 并给结论，不得顺手把修正并入暂存区
+
+违反此条比代码写得差更严重。
+
+## ⛔ 依赖迭代：不碰 *.lock
+
+- 任何情况下禁止修改 `*.lock`（yarn.lock、package-lock.json、Podfile.lock 等）：不编辑、不生成、不删除
+- 禁止运行 `yarn install` / `npm install` / `pod install` 等会改动 lock 或 node_modules 的命令；依赖增删只改 `package.json`（含 `resolutions`）与源码
+- lock 刷新、原生工程同步（pod install / gradle sync）、真机回归由用户执行；AI 须在方案中显式列出这些"待用户自理项"
+
+## 通用
+
+- 优先选择编辑而非重写整个文件
+- 除非文件被编辑过，否则不要重复阅读已读过的文件
+- 输出追求简洁，但推理过程必须详尽
+
+
+## 详细规范（按需读取）
+
+> 触发对应业务时读取对应文件，不要一次性全部加载。
+
+| 场景                                       | 文档                                                         |
+| ------------------------------------------ | ------------------------------------------------------------ |
+| 了解项目结构、技术栈、路径别名、导航、构建 | [.claude/docs/architecture.md](.claude/docs/architecture.md) |
+| 新建/修改页面（Screen）                    | [.claude/docs/screen.md](.claude/docs/screen.md)             |
+| 查找/定位某个页面                          | [.claude/docs/screens.md](.claude/docs/screens.md)           |
+| 新建/修改可复用组件（components/）         | [.claude/docs/component.md](.claude/docs/component.md)       |
+| 新建/修改 MobX Store                       | [.claude/docs/store.md](.claude/docs/store.md)               |
+| API 请求相关                               | [.claude/docs/api.md](.claude/docs/api.md)                   |
+| 测试规范                                   | [.claude/docs/testing.md](.claude/docs/testing.md)           |
+| Token 预算规则                             | [.claude/docs/token-budget.md](.claude/docs/token-budget.md) |
+| 代码规范与风格                             | [.claude/docs/code-style.md](.claude/docs/code-style.md)     |
+
+## 文档维护
+
+当以下情况发生时，主动更新 `.claude/docs/` 中对应的文档：
+
+- 新增或重构了页面模板/约定 → 更新 `screen.md`
+- 新增/删除/重命名了页面 → 更新 `screens.md`
+- 新增或重构了可复用组件模式 → 更新 `component.md`
+- Store 继承链或文件结构变化 → 更新 `store.md`
+- API 请求方式或常量位置变化 → 更新 `api.md`
+- 新增路径别名、导航结构变化、技术栈升级 → 更新 `architecture.md`
+- 发现代码风格约定与文档不符 → 更新 `code-style.md`
+- 测试规范变化 → 更新 `testing.md`
+
+原则：改了什么就更新什么，不要等用户提醒。

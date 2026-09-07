@@ -1,0 +1,54 @@
+/*
+ * @Author: czy0729
+ * @Date: 2024-08-24 11:21:34
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-01-07 05:28:15
+ */
+import { computed } from 'mobx'
+import { monoStore } from '@stores'
+import { HTML_SUBJECT_CHARACTERS, LIST_EMPTY } from '@constants'
+import State from './state'
+
+import type { Characters } from '@stores/mono/types'
+import type { SnapshotId } from '../types'
+
+export default class Computed extends State {
+  @computed get subjectId() {
+    return this.params.subjectId
+  }
+
+  /** 更多角色 */
+  @computed get characters() {
+    const characters = monoStore.characters(this.subjectId)
+    if (!characters._loaded) {
+      if (!this.ota) return LIST_EMPTY as Characters
+
+      return {
+        ...this.ota,
+        pagination: {
+          page: 1,
+          pageTotal: 10
+        }
+      }
+    }
+
+    return characters
+  }
+
+  @computed get url() {
+    return HTML_SUBJECT_CHARACTERS(this.subjectId)
+  }
+
+  /** 云快照 */
+  @computed get ota() {
+    return this.state.ota[this.thirdPartyKey]
+  }
+
+  @computed get thirdPartyKey() {
+    return `characters_${this.subjectId}` as SnapshotId
+  }
+
+  @computed get hm() {
+    return [this.url, 'Characters']
+  }
+}

@@ -1,0 +1,42 @@
+/*
+ * @Author: czy0729
+ * @Date: 2020-06-03 09:53:54
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-03-20 07:40:13
+ */
+import React, { useMemo } from 'react'
+import { observer } from 'mobx-react'
+import { TabView } from '@components'
+import { BlurViewTab } from '@_'
+import { _, useStore } from '@stores'
+import { renderTabBar } from './utils'
+import { COMPONENT_MAIN, INITIAL_LAYOUT } from './ds'
+
+import type { Ctx } from '../../types'
+import type { TabProps } from './types'
+
+/** Tab 主体 */
+function Tab({ renderScene }: TabProps) {
+  const { $ } = useStore<Ctx>(COMPONENT_MAIN)
+
+  const { length } = $.tabs
+  const elBackground = useMemo(() => <BlurViewTab length={length} />, [length])
+
+  if (!$.state._loaded) return null
+
+  return (
+    <TabView
+      key={_.orientation}
+      initialLayout={INITIAL_LAYOUT}
+      lazy
+      lazyPreloadDistance={1}
+      navigationState={$.navigationState}
+      renderTabBar={renderTabBar}
+      renderBackground={elBackground}
+      renderScene={renderScene}
+      onIndexChange={$.onChange}
+    />
+  )
+}
+
+export default observer(Tab)

@@ -1,0 +1,151 @@
+/*
+ * @Author: czy0729
+ * @Date: 2020-10-12 12:19:03
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-08-27 02:07:58
+ */
+import React, { useCallback, useState } from 'react'
+import { observer } from 'mobx-react'
+import { Component, Flex, Heatmap, Iconfont, ScrollViewHorizontal, Text } from '@components'
+import { InView, PreventTouchPlaceholder, SectionTitle } from '@_'
+import { _, systemStore, useStore } from '@stores'
+import { findSubjectCn, open, stl } from '@utils'
+import { HOST_DB_REFERER } from '@constants'
+import { TITLE_THUMBS } from '../../ds'
+import BlockAnchor from '../block-anchor'
+import IconHidden from '../icon/hidden'
+import IconPic from '../icon/pic'
+import IconPreview from '../icon/preview'
+import Split from '../split'
+import Preview from './preview'
+import { prioritizeByKeywords } from './utils'
+import Video from './video'
+import { COMPONENT } from './ds'
+import { styles } from './styles'
+
+import type { ReactNode } from '@types'
+import type { Ctx } from '../../types'
+import type { Props } from './types'
+
+function Thumbs({ onBlockRef }: Props) {
+  const { $ } = useStore<Ctx>(COMPONENT)
+
+  const [scrolled, setScrolled] = useState(false)
+
+  const handleScroll = useCallback(() => {
+    if (!scrolled) setScrolled(true)
+  }, [scrolled])
+
+  if (!$.showThumbs[1]) {
+    return (
+      <Flex style={stl(_.container.wind, _.mt.sm)}>
+        <Flex.Item>
+          <IconPic />
+        </Flex.Item>
+      </Flex>
+    )
+  }
+
+  const { showThumbs } = systemStore.setting
+  const { epsThumbsHeader, videos = [] } = $.state
+  const { thumbsData, thumbsList, thumbsReference, thumbsTitle } = $
+
+  // 右侧按钮
+  let elRight: ReactNode
+  if (!showThumbs) {
+    elRight = <IconHidden name={thumbsTitle} value='showThumbs' />
+  } else if (thumbsReference === HOST_DB_REFERER) {
+    elRight = <IconPreview data={thumbsData} headers={epsThumbsHeader} />
+  } else {
+    elRight = null
+  }
+
+  const showTitle = $.type && $.type !== '动画'
+
+  return (
+    <Component id='screen-subject-thumbs'>
+      <BlockAnchor title={TITLE_THUMBS} onBlockRef={onBlockRef} />
+
+      <InView
+        style={stl(
+          styles.container,
+          showTitle && videos.length && styles.containerFull,
+          !showThumbs && styles.containerNotShow
+        )}
+      >
+        <SectionTitle
+          style={_.container.wind}
+          right={elRight}
+          icon={!showThumbs && 'md-navigate-next'}
+          splitStyles
+          onPress={() => $.onSwitchBlock('showThumbs')}
+        >
+          {thumbsTitle}
+        </SectionTitle>
+
+        {showThumbs && (
+          <ScrollViewHorizontal
+            style={styles.scroll}
+            contentContainerStyle={_.container.wind}
+            onScroll={scrolled ? undefined : handleScroll}
+          >
+            {prioritizeByKeywords(videos, [
+              $.artist,
+              findSubjectCn($.subjectAnime?.title, $.subjectId)
+            ]).map(item => (
+              <Video
+                key={item.cover || item.src || item.href}
+                item={item}
+                epsThumbsHeader={epsThumbsHeader}
+                showTitle={showTitle}
+              />
+            ))}
+
+            {thumbsData
+              .filter((_item, index) => index <= (scrolled ? 12 : 4))
+              .map((item, index) => (
+                <Preview
+                  key={item}
+                  item={item}
+                  index={index}
+                  thumbs={thumbsList}
+                  epsThumbsHeader={epsThumbsHeader}
+                />
+              ))}
+          </ScrollViewHorizontal>
+        )}
+
+        {showThumbs && !!thumbsReference && (
+          <Flex style={stl(_.container.wind, _.mt.sm)}>
+            <Flex.Item>
+              <IconPic />
+            </Flex.Item>
+            <Text
+              type={_.select('sub', 'icon')}
+              size={10}
+              lineHeight={12}
+              align='right'
+              onPress={() => open(epsThumbsHeader?.Referer)}
+            >
+              数据来源自 {thumbsReference}
+            </Text>
+            <Iconfont
+              style={_.ml.xs}
+              name='md-open-in-new'
+              size={10}
+              lineHeight={12}
+              color={_.colorIcon}
+            />
+          </Flex>
+        )}
+
+        <PreventTouchPlaceholder />
+        <Heatmap id='条目.预览' />
+      </InView>
+
+      <Split />
+    </Component>
+  )
+}
+
+export default observer(Thumbs)

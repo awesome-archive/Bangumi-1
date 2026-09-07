@@ -1,0 +1,114 @@
+/*
+ * @Author: czy0729
+ * @Date: 2019-11-21 23:37:31
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-09-03 23:23:44
+ */
+import React from 'react'
+import { Flex, Iconfont, Text } from '@components'
+import { Popover } from '@_'
+import { _, useStore } from '@stores'
+import { stl, toFixed } from '@utils'
+import { ob } from '@utils/decorators'
+import { t } from '@utils/fetch'
+import {
+  B,
+  M,
+  MODEL_TINYGRAIL_ASSETS_TYPE,
+  MODEL_TINYGRAIL_CALCULATE_TYPE,
+  TINYGRAIL_ASSETS_TYPE,
+  TINYGRAIL_CALCULATE_TEMPLE_TYPE,
+  TINYGRAIL_CALCULATE_TYPE
+} from '@constants'
+import { memoStyles } from './styles'
+
+import type { ViewStyle } from '@types'
+import type { Ctx } from '../types'
+
+const TYPE_DATA = TINYGRAIL_ASSETS_TYPE.map(item => item.label)
+const CALCULATE_TYPE_DATA = TINYGRAIL_CALCULATE_TYPE.map(item => item.label)
+const CALCULATE_TEMPLE_TYPE_DATA = TINYGRAIL_CALCULATE_TEMPLE_TYPE.map(item => item.label)
+
+function ToolBar({ style }: { style?: ViewStyle }) {
+  const { $ } = useStore<Ctx>()
+  const styles = memoStyles()
+  const { type, calculateType, total = 0, filterItems } = $.state
+  const typeLabel = MODEL_TINYGRAIL_ASSETS_TYPE.getLabel(type)
+  const calculateTypeLabel = MODEL_TINYGRAIL_CALCULATE_TYPE.getLabel(calculateType)
+  let totalText
+  if (total > B) {
+    totalText = `${toFixed(total / B, 1)}亿`
+  } else if (total > M) {
+    totalText = `${toFixed(total / M, 1)}万`
+  } else {
+    totalText = toFixed(total || 0, 1)
+  }
+  return (
+    <Flex style={stl(styles.container, style)}>
+      <Flex.Item flex={0.8}>
+        <Popover data={TYPE_DATA} onSelect={title => $.onTypeSelect(title)}>
+          <Flex style={styles.item} justify='center'>
+            <Text type='warning'>{typeLabel || '范围'}</Text>
+            <Text style={_.ml.xs} type='warning' size={12}>
+              {$.charaAssets.length}
+            </Text>
+          </Flex>
+        </Popover>
+      </Flex.Item>
+      <Flex.Item>
+        <Popover
+          data={$.isTemple ? CALCULATE_TEMPLE_TYPE_DATA : CALCULATE_TYPE_DATA}
+          onSelect={title => $.onCalculateTypeSelect(title)}
+        >
+          <Flex style={styles.item} justify='center'>
+            <Text type='warning'>{calculateTypeLabel || '计算类型'}</Text>
+            <Text style={_.ml.xs} type='warning' size={12}>
+              {totalText}
+            </Text>
+          </Flex>
+        </Popover>
+      </Flex.Item>
+      <Flex.Item flex={0.8}>
+        <Popover
+          data={['重置', '隐藏低持仓', ...filterItems.map(item => `${item.name} #${item.id}`)]}
+          onSelect={title => {
+            t('资产分析.选择筛选', {
+              title
+            })
+
+            if (title === '重置') {
+              $.reset()
+              return
+            }
+
+            if (title === '隐藏低持仓') {
+              $.onHideLow()
+              return
+            }
+
+            const [name, id] = title.split(' #')
+            $.onToggleItem({
+              id: parseInt(id),
+              name
+            })
+          }}
+        >
+          <Flex style={styles.item} justify='center'>
+            <Iconfont
+              style={{
+                color: filterItems.length ? _.colorWarning : _.colorTinygrailText
+              }}
+              name='md-filter-list'
+              size={16}
+            />
+            <Text style={_.ml.sm} type={filterItems.length ? 'warning' : 'tinygrailText'}>
+              {filterItems.length || '-'}
+            </Text>
+          </Flex>
+        </Popover>
+      </Flex.Item>
+    </Flex>
+  )
+}
+
+export default ob(ToolBar)

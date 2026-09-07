@@ -1,0 +1,33 @@
+/*
+ * @Author: czy0729
+ * @Date: 2024-01-20 08:32:05
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-03-20 07:34:09
+ */
+import React from 'react'
+import { View } from 'react-native'
+import { observer } from 'mobx-react'
+import { systemStore, useStore } from '@stores'
+import { COMPONENT } from './ds'
+import { memoStyles } from './styles'
+
+import type { Ctx } from '../../../types'
+import type { Props } from './types'
+
+function Container({ subjectId, children }: Props) {
+  const { $ } = useStore<Ctx>(COMPONENT)
+
+  const styles = memoStyles()
+
+  return (
+    <View
+      style={
+        systemStore.setting.heatMap && $.$Item(subjectId).expand ? styles.heatMap : styles.item
+      }
+    >
+      {children}
+    </View>
+  )
+}
+
+export default observer(Container)

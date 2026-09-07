@@ -1,0 +1,579 @@
+/*
+ * @Author: czy0729
+ * @Date: 2023-04-24 14:26:25
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-08-31 05:34:27
+ */
+import { getTimestamp, HTMLTrim } from '@utils'
+import { getBucketId } from '@utils/bucket'
+import { fetchHTML, xhr, xhrCustom } from '@utils/fetch'
+import { get, groupTopics } from '@utils/kv'
+import {
+  CDN_RAKUEN,
+  FROZEN_FN,
+  HTML_BLOG,
+  HTML_BOARD,
+  HTML_GROUP,
+  HTML_GROUP_INFO,
+  HTML_GROUP_MINE,
+  HTML_NOTIFY,
+  HTML_NOTIFY_META,
+  HTML_PRIVACY,
+  HTML_RAKUEN,
+  HTML_RAKUEN_HOT,
+  HTML_REVIEWS,
+  HTML_TOPIC,
+  HTML_TOPIC_EDIT,
+  LIST_EMPTY
+} from '@constants'
+import {
+  cheerioBlog,
+  cheerioBoard,
+  cheerioGroup,
+  cheerioGroupInfo,
+  cheerioHot,
+  cheerioMine,
+  cheerioNotify,
+  cheerioPrivacy,
+  cheerioRakuen,
+  cheerioReviews,
+  cheerioTopic,
+  cheerioTopicEdit,
+  convertGroupTopicsToUserTopics
+} from './common'
+import Computed from './computed'
+import { DEFAULT_SCOPE, DEFAULT_TYPE, INIT_TOPIC } from './init'
+
+import type {
+  Id,
+  RakuenScope,
+  RakuenType,
+  RakuenTypeGroup,
+  RakuenTypeMono,
+  SubjectId,
+  TopicId,
+  TopicType,
+  UserId
+} from '@types'
+import type { NotifyItem, NotifyMeta } from './types'
+
+export default class Fetch extends Computed {
+  /** 获取超展开聚合列表 */
+  fetchRakuen = async (
+    scope: RakuenScope = DEFAULT_SCOPE,
+    type: RakuenType | RakuenTypeMono | RakuenTypeGroup = DEFAULT_TYPE
+  ) => {
+    const STATE_KEY = 'rakuen'
+    const ITEM_KEY = `${scope}|${type}` as const
+
+    try {
+      const html = await fetchHTML({
+        url: HTML_RAKUEN(scope, type)
+      })
+
+      const _loaded = getTimestamp()
+      const list = cheerioRakuen(html, _loaded)
+      if (list?.length) {
+        this.setState({
+          [STATE_KEY]: {
+            [ITEM_KEY]: {
+              list,
+              pagination: {
+                page: 1,
+                pageTotal: 1
+              },
+              _loaded
+            }
+          }
+        })
+        this.save(STATE_KEY)
+      }
+    } catch (error) {
+      this.error('fetchRakuen', error)
+    }
+
+    return this.getState(STATE_KEY, ITEM_KEY, LIST_EMPTY)
+  }
+
+  /** 获取帖子内容和留言 */
+  fetchTopic = async (args: { topicId: TopicId }) => {
+    const { topicId } = args || {}
+    const HTML = await fetchHTML({
+      url: HTML_TOPIC(topicId)
+    })
+    const { topic, comments, likes } = cheerioTopic(HTML)
+    const _loaded = getTimestamp()
+
+    const stateKey = topicId
+    const last = getBucketId(topicId)
+    const commentsKey = `comments${last}` as const
+    const likesKey = `likes${last}` as const
+
+    this.setState({
+      [commentsKey]: {
+        [stateKey]: {
+          list: comments,
+          pagination: {
+            page: 1,
+            pageTotal: 1
+          },
+          _list: [],
+          _loaded
+        }
+      },
+      [likesKey]: {
+        [stateKey]: likes
+      }
+    })
+    this.save(commentsKey)
+    this.save(likesKey)
+    this.saveTopicBucket(topicId, {
+      ...topic,
+      _loaded
+    })
+    this.updateGroupThumb(topic.group, topic.groupThumb)
+
+    return {
+      topic,
+      comments,
+      likes
+    }
+  }
+
+  /** @deprecated CDN 获取帖子信息 */
+  fetchTopicFromCDN = async (topicId: string | number) => {
+    try {
+      const { _response } = await xhrCustom({
+        url: CDN_RAKUEN(topicId)
+      })
+
+      const data = {
+        ...INIT_TOPIC,
+        ...JSON.parse(_response)
+      }
+      const key = 'topicFormCDN'
+      this.setState({
+        [key]: {
+          [topicId]: data
+        }
+      })
+      return data
+    } catch (error) {
+      return INIT_TOPIC
+    }
+  }
+
+  /** 装载云端帖子缓存数据 */
+  fetchTopicFromOSS = async (topicId: TopicId) => {
+    // 桶可能尚未读回, 先同步 init 再判新鲜度, 避免守卫失效导致 OSS 旧数据回写
+    await this.init(`topic${getBucketId(topicId)}`)
+
+    const now = getTimestamp()
+    const topic = this.topic(topicId)
+
+    // 帖子数据存在且比较新鲜, 不再请求, 应直接使用帖子数据
+    if (topic._loaded && now - Number(topic._loaded) <= 60 * 60 * 24) {
+      return true
+    }
+
+    try {
+      const data = await get(`topic_${topicId.replace('/', '_')}`)
+      if (!data) return false
+
+      const { ts, topic, comments } = data
+      if (typeof topic === 'object' && typeof comments === 'object') {
+        const stateKey = topicId
+        const last = getBucketId(topicId)
+        const commentsKey = `comments${last}` as const
+
+        if (comments?.list?.[0]?.floor) {
+          if (
+            comments.list.length >= 2 &&
+            comments.list[0].floor.localeCompare(comments.list[1].floor)
+          ) {
+            comments.list.reverse()
+          }
+        }
+
+        this.setState({
+          [commentsKey]: {
+            [stateKey]: {
+              list: comments?.list || [],
+              pagination: {
+                page: 1,
+                pageTotal: 1
+              },
+              _list: [],
+              _loaded: ts
+            }
+          }
+        })
+        this.save(commentsKey)
+        this.saveTopicBucket(topicId, {
+          ...INIT_TOPIC,
+          ...topic,
+          _loaded: ts
+        })
+        return true
+      }
+    } catch {}
+
+    return false
+  }
+
+  /** 自动判断尽快帖子快照数据 */
+  fetchTopicSnapshot = async (topicId: TopicId) => {
+    let result = false
+    if (!result) {
+      this.log('fetchTopicSnapshot', 'oss', topicId)
+      result = await this.fetchTopicFromOSS(topicId)
+    }
+
+    if (!result) {
+      this.log('fetchTopicSnapshot', 'topic', topicId)
+      const data = await this.fetchTopic({
+        topicId
+      })
+      if (data.topic?._loaded && data.topic?.title) result = true
+    }
+
+    return result
+  }
+
+  /** 电波提醒 */
+  fetchNotify = async (
+    /** 是否分析回复内容 */
+    analysis: boolean = false
+  ) => {
+    const STATE_KEY = 'notify'
+    const data = {
+      setCookie: '',
+      html: '',
+      list: [] as NotifyItem[]
+    }
+
+    try {
+      const { list, _loaded } = this[STATE_KEY]
+      let { unread, clearHref } = this[STATE_KEY]
+
+      /** 元信息 */
+      try {
+        await new Promise<void>((resolve, reject) => {
+          xhr(
+            {
+              method: 'GET',
+              url: HTML_NOTIFY_META(),
+              noConsole: true
+            },
+            responseText => {
+              try {
+                if (responseText) {
+                  const notifyMeta: NotifyMeta = JSON.parse(responseText)
+                  clearHref = notifyMeta.notify_ignore_url || clearHref || ''
+                  unread = notifyMeta.notify_count || unread || 0
+                }
+                resolve()
+              } catch (e) {
+                reject(e)
+              }
+            },
+            reject
+          )
+        })
+      } catch {}
+
+      const res = await fetchHTML({
+        url: HTML_NOTIFY(),
+        raw: true
+      })
+
+      data.setCookie = res?.headers?.map?.['set-cookie'] || ''
+      data.html = HTMLTrim(await res.text()) || ''
+      data.list = analysis ? cheerioNotify(data.html) : list
+
+      this.setState({
+        [STATE_KEY]: {
+          unread,
+          clearHref,
+          list: data.list,
+          _loaded: analysis ? getTimestamp() : _loaded
+        }
+      })
+      this.save(STATE_KEY)
+    } catch (error) {
+      this.error('fetchNotify', error)
+    }
+
+    return data
+  }
+
+  /** 小组信息 */
+  fetchGroupInfo = async (args: { groupId: Id }) => {
+    const { groupId = 0 } = args || {}
+    const html = await fetchHTML({
+      url: HTML_GROUP_INFO(groupId)
+    })
+    const groupInfo = cheerioGroupInfo(html)
+
+    const key = 'groupInfo'
+    this.setState({
+      [key]: {
+        [groupId]: {
+          ...groupInfo,
+          _loaded: getTimestamp()
+        }
+      }
+    })
+    this.save(key)
+
+    return groupInfo
+  }
+
+  /** 小组帖子列表 */
+  fetchGroup = async (args: { groupId: Id; page?: number }) => {
+    const { groupId, page = 1 } = args || {}
+    const html = await fetchHTML({
+      url: HTML_GROUP(groupId, page)
+    })
+
+    const list = cheerioGroup(html)
+    const data = {
+      list: list || [],
+      _loaded: getTimestamp()
+    }
+    this.setState({
+      group: {
+        [`${groupId}|${page}`]: data
+      }
+    })
+
+    return data
+  }
+
+  /** 条目帖子 */
+  fetchBoard = async (subjectId: SubjectId) => {
+    const STATE_KEY = 'board'
+    const ITEM_KEY = subjectId
+
+    try {
+      const html = await fetchHTML({
+        url: HTML_BOARD(subjectId)
+      })
+
+      this.setState({
+        [STATE_KEY]: {
+          [ITEM_KEY]: {
+            list: cheerioBoard(html),
+            _loaded: getTimestamp()
+          }
+        }
+      })
+    } catch (error) {
+      this.error('fetchBoard', error)
+    }
+
+    return this[STATE_KEY](ITEM_KEY)
+  }
+
+  /** 条目影评列表 (日志) */
+  fetchReviews = async (subjectId: SubjectId, refresh: boolean = false) => {
+    const STATE_KEY = 'reviews'
+    const ITEM_KEY = subjectId
+    const LIMIT = 10
+
+    try {
+      const { pagination, list } = this[STATE_KEY](ITEM_KEY)
+      const page = refresh ? 1 : pagination.page + 1
+      const html = await fetchHTML({
+        url: HTML_REVIEWS(subjectId, page)
+      })
+
+      const next = cheerioReviews(html)
+      this.setState({
+        [STATE_KEY]: {
+          [ITEM_KEY]: {
+            list: refresh ? next : [...list, ...next],
+            pagination: {
+              page,
+              pageTotal: next.length >= LIMIT ? 100 : page
+            },
+            _loaded: getTimestamp()
+          }
+        }
+      })
+    } catch (error) {
+      this.error('fetchReviews', error)
+    }
+
+    return this[STATE_KEY](subjectId)
+  }
+
+  /** 我的小组 */
+  fetchMine = async () => {
+    const STATE_KEY = 'mine'
+
+    try {
+      const html = await fetchHTML({
+        url: HTML_GROUP_MINE()
+      })
+
+      this.setState({
+        [STATE_KEY]: {
+          list: cheerioMine(html),
+          pagination: {
+            page: 1,
+            pageTotal: 1
+          },
+          _loaded: getTimestamp()
+        }
+      })
+      this.save(STATE_KEY)
+    } catch (error) {
+      this.error('fetchMine', error)
+    }
+
+    return this[STATE_KEY]
+  }
+
+  /** 获取日志内容和留言 */
+  fetchBlog = async (blogId: Id) => {
+    const STATE_KEY = 'blog'
+    const STATE_KEY_COMMENTS = 'blogComments'
+    const ITEM_KEY = blogId
+
+    try {
+      const html = await fetchHTML({
+        url: HTML_BLOG(blogId)
+      })
+      const { blog, blogComments } = cheerioBlog(html)
+      const _loaded = getTimestamp()
+
+      this.setState({
+        [STATE_KEY]: {
+          [ITEM_KEY]: {
+            ...blog,
+            _loaded
+          }
+        },
+        [STATE_KEY_COMMENTS]: {
+          [ITEM_KEY]: {
+            list: blogComments,
+            pagination: {
+              page: 1,
+              pageTotal: 1
+            },
+            _list: [],
+            _loaded
+          }
+        }
+      })
+      this.save(STATE_KEY)
+    } catch (error) {
+      this.error('fetchBlog', error)
+    }
+
+    return {
+      blog: this[STATE_KEY](ITEM_KEY),
+      blogComments: this[STATE_KEY_COMMENTS](ITEM_KEY)
+    }
+  }
+
+  /** @deprecated 日志内容 (CDN) */
+  fetchBlogFormCDN = FROZEN_FN
+
+  /** 获取用户历史超展开帖子 */
+  fetchUserTopicsFromCDN = async (userId: UserId, refresh: boolean = false) => {
+    const STATE_KEY = 'userTopicsFromCDN'
+    const ITEM_KEY = userId
+
+    try {
+      const data = this[STATE_KEY](ITEM_KEY)
+      const { list, pagination } = data
+      if (!refresh && pagination.page >= pagination.pageTotal) return data
+
+      const page = refresh ? 1 : pagination.page + 1
+      const limit = 20
+      const result = await groupTopics(userId, {
+        sort: 'newest',
+        limit,
+        offset: (page - 1) * limit
+      })
+
+      const nextList = result?.data ? convertGroupTopicsToUserTopics(result.data) : []
+      const total = result?.pagination?.total ?? 0
+      this.setState({
+        [STATE_KEY]: {
+          [ITEM_KEY]: {
+            list: refresh ? nextList : [...list, ...nextList],
+            pagination: {
+              page,
+              pageTotal: Math.max(Math.ceil(total / limit) || 1, page)
+            },
+            _loaded: getTimestamp()
+          }
+        }
+      })
+    } catch (error) {
+      this.log('fetchUserTopicsFromCDN', error)
+    }
+
+    return this[STATE_KEY](ITEM_KEY)
+  }
+
+  /** 超展开热门数据 */
+  fetchRakuenHot = async () => {
+    const STATE_KEY = 'hot'
+
+    try {
+      const html = await fetchHTML({
+        url: HTML_RAKUEN_HOT()
+      })
+
+      this.setState({
+        [STATE_KEY]: {
+          list: cheerioHot(html),
+          pagination: {
+            page: 1,
+            pageTotal: 1
+          },
+          _loaded: getTimestamp()
+        }
+      })
+      this.save(STATE_KEY)
+    } catch (error) {
+      this.error('fetchRakuenHot', error)
+    }
+
+    return this[STATE_KEY]
+  }
+
+  /** 获取回复楼层的 BBCODE */
+  fetchTopicEdit = async (postId: Id, type: TopicType | 'blog') => {
+    const html = await fetchHTML({
+      url: HTML_TOPIC_EDIT(postId, type)
+    })
+    return cheerioTopicEdit(html)
+  }
+
+  /** 个人设置隐私 */
+  fetchPrivacy = async () => {
+    const html = await fetchHTML({
+      url: HTML_PRIVACY()
+    })
+    const data = cheerioPrivacy(html)
+
+    this.setState({
+      privacy: data.privacy,
+      blockedUsers: {
+        list: data.blockedUsers || [],
+        _loaded: getTimestamp()
+      },
+      formhash: data.formhash
+    })
+    this.save('privacy')
+    this.save('blockedUsers')
+    this.save('formhash')
+
+    return data
+  }
+}

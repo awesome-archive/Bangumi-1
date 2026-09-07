@@ -1,0 +1,119 @@
+/*
+ * @Author: czy0729
+ * @Date: 2020-05-21 17:08:10
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-03-20 05:16:43
+ *
+ * 角色/人物列表条目: 封面 + 文字信息 + 声优列表
+ */
+import React, { useMemo } from 'react'
+import { observer } from 'mobx-react'
+import { Component, Cover, Flex, Link } from '@components'
+import { _ } from '@stores'
+import { cnjp } from '@utils'
+import { r } from '@utils/dev'
+import { EVENT } from '@constants'
+import { InView } from '../../base'
+import Actors from './actors'
+import Content from './content'
+import More from './more'
+import { COMPONENT, IMG_WIDTH, ITEM_CHARACTER_HEIGHT } from './ds'
+import { memoStyles } from './styles'
+
+export { ITEM_CHARACTER_HEIGHT }
+
+import type { CoverProps, LinkProps } from '@components'
+import type { MonoId } from '@types'
+import type { Props as ItemCharacterProps } from './types'
+export type { ItemCharacterProps }
+
+export const ItemCharacter = observer(
+  ({
+    event = EVENT,
+    index,
+    type = 'character',
+    id,
+    cover,
+    name,
+    nameCn,
+    replies,
+    info,
+    actors = [],
+    positions = [],
+    positionDetails = [],
+    position,
+    children
+  }: ItemCharacterProps) => {
+    r(COMPONENT)
+
+    const styles = memoStyles()
+
+    const monoId = (String(id).includes(type) ? id : `${type}/${id}`) as MonoId
+    const cn = cnjp(nameCn, name).trim()
+    const jp = cnjp(name, nameCn).trim()
+
+    const linkProps: LinkProps<'Mono'> = useMemo(
+      () => ({
+        path: 'Mono',
+        getParams: () => ({
+          monoId,
+          _name: cn,
+          _jp: jp,
+          _image: cover,
+          _count: String(replies || '').replace('+', '')
+        }),
+        eventId: event.id,
+        getEventData: () => ({
+          to: 'Mono',
+          monoId
+        })
+      }),
+      [monoId, cn, jp, cover, replies, event.id]
+    )
+    const y = InView.y(index, ITEM_CHARACTER_HEIGHT)
+
+    const coverProps: CoverProps = {
+      src: cover
+    }
+    if (cover && typeof cover === 'string') {
+      coverProps.autoSize = IMG_WIDTH
+    } else {
+      coverProps.width = IMG_WIDTH
+      coverProps.height = IMG_WIDTH
+    }
+
+    return (
+      <Component id='item-character' data-key={id} style={styles.container}>
+        <Flex style={styles.wrap} align='start'>
+          <InView style={styles.inView} y={y}>
+            {!!cover && (
+              <Link {...linkProps}>
+                <Cover {...coverProps} />
+              </Link>
+            )}
+          </InView>
+
+          <Flex.Item style={_.ml.md}>
+            <Content
+              type={type}
+              linkProps={linkProps}
+              cn={cn}
+              jp={jp}
+              replies={replies}
+              info={info}
+              position={positions.length ? positions : position ? [position] : []}
+              positionDetails={positionDetails}
+            />
+            <Actors actors={actors} y={y} event={event} />
+          </Flex.Item>
+
+          {type === 'person' && <More monoId={monoId} name={cn} />}
+        </Flex>
+
+        {children}
+      </Component>
+    )
+  }
+)
+
+export default ItemCharacter

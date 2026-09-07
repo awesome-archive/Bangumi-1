@@ -1,0 +1,30 @@
+/*
+ * @Author: czy0729
+ * @Date: 2020-07-10 09:46:33
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-03-18 03:48:43
+ */
+import React from 'react'
+import { observer } from 'mobx-react'
+import { _ } from '@stores'
+import { r } from '@utils/dev'
+import { ActivityIndicator } from '../activity-indicator'
+import { COMPONENT } from './ds'
+
+import type { Props as ActivityProps } from './types'
+export type { ActivityProps }
+
+/** 加载指示器 */
+export const Activity = observer(({ size = 'small', toast = false, color }: ActivityProps) => {
+  r(COMPONENT)
+
+  return (
+    <ActivityIndicator
+      size={size}
+      toast={toast}
+      color={color || _.select(_.colorSub, _.colorDesc)}
+    />
+  )
+})
+
+export default Activity

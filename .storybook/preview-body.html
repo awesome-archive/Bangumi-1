@@ -1,0 +1,30 @@
+<style>
+  @font-face {
+    font-family: 'rhrm';
+    src: url('https://gcore.jsdelivr.net/gh/czy0729/Bangumi-Storybook@master/assets/fonts/ResourceHanRoundedCN-Medium.woff2')
+      format('woff2');
+    /* src: url('https://gcore.jsdelivr.net/gh/czy0729/Bangumi-Storybook@master/assets/fonts/AlimamaFangYuanTiVF-Thin.woff2') format('woff2'); */
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'rhrb';
+    src: url('https://gcore.jsdelivr.net/gh/czy0729/Bangumi-Storybook@master/assets/fonts/ResourceHanRoundedCN-Medium.woff2')
+      format('woff2');
+    /* src: url('https://gcore.jsdelivr.net/gh/czy0729/Bangumi-Storybook@master/assets/fonts/AlimamaFangYuanTiVF-Thin.woff2') format('woff2'); */
+    font-display: swap;
+  }
+</style>
+<script>
+  if (window.location.host.includes('github') && 'serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('/service-worker.js')
+        .then(registration => {
+          console.info('Service Worker register success:', registration)
+        })
+        .catch(error => {
+          console.info('Service Worker register fail:', error)
+        })
+    })
+  }
+</script>

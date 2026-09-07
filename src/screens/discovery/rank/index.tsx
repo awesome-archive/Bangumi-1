@@ -1,0 +1,35 @@
+/*
+ * @Author: czy0729
+ * @Date: 2019-07-28 16:13:43
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2025-10-29 23:22:50
+ */
+import React from 'react'
+import { observer } from 'mobx-react'
+import { Component, HeaderPlaceholder, Page } from '@components'
+import { StoreContext } from '@stores'
+import FlatList from './component/flat-list'
+import Scroll from './component/scroll'
+import Header from './header'
+import { useRankPage } from './hooks'
+
+import type { NavigationProps } from '@types'
+
+/** 排行榜 */
+function Rank(props: NavigationProps) {
+  const { id, $ } = useRankPage(props)
+
+  return (
+    <Component id='screen-rank'>
+      <StoreContext.Provider value={id}>
+        <Page loaded={$.state._loaded} loading={$.loading}>
+          <HeaderPlaceholder />
+          {$.state.pagination ? <Scroll /> : <FlatList />}
+        </Page>
+        <Header />
+      </StoreContext.Provider>
+    </Component>
+  )
+}
+
+export default observer(Rank)

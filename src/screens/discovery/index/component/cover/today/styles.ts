@@ -1,0 +1,39 @@
+/*
+ * @Author: czy0729
+ * @Date: 2022-09-10 07:11:16
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-08-16 07:33:21
+ */
+import { _ } from '@stores'
+
+export const memoStyles = _.memoStyles(() => {
+  const width = Math.max(100, _.windowSm.contentWidth * 0.26)
+  const margin = _.device(_._wind, _.md)
+
+  return {
+    item: {
+      marginRight: margin
+    },
+    cover: {
+      width,
+      height: Math.floor(width * 1.38)
+    },
+    linear: {
+      position: 'absolute',
+      zIndex: 1,
+      top: '50%',
+      right: 0,
+      bottom: 0,
+      left: 0,
+      marginBottom: -0.5
+    },
+    info: {
+      position: 'absolute',
+      zIndex: 2,
+      right: _.sm + 4,
+      bottom: _.sm + 2,
+      left: _.sm + 4,
+      opacity: 0.92
+    }
+  }
+})

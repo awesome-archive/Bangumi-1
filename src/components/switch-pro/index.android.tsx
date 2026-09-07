@@ -1,0 +1,42 @@
+/*
+ * @Author: czy0729
+ * @Date: 2023-12-29 22:09:04
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-06-21 06:06:39
+ */
+import React from 'react'
+import { Switch } from 'react-native'
+import { observer } from 'mobx-react'
+import { _ } from '@stores'
+import { stl } from '@utils'
+import { r } from '@utils/dev'
+import { Component } from '../component'
+import { COMPONENT } from './ds'
+
+import type { Props as SwitchProProps } from './types'
+export type { SwitchProProps }
+
+export const SwitchPro = observer(({ style, value, onSyncPress, onAsyncPress }: SwitchProProps) => {
+  r(COMPONENT)
+
+  return (
+    <Component id='component-switch-pro'>
+      <Switch
+        style={stl(style, {
+          transform: [
+            {
+              scale: 1
+            }
+          ]
+        })}
+        value={value}
+        onValueChange={onAsyncPress || onSyncPress}
+        trackColor={{
+          false: _.select('#e0e0e0', _._colorDarkModeLevel2)
+        }}
+      />
+    </Component>
+  )
+})
+
+export default SwitchPro

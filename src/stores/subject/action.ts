@@ -1,0 +1,169 @@
+/*
+ * @Author: czy0729
+ * @Date: 2023-04-16 13:38:53
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-09-01 19:12:02
+ */
+import { getBucketId } from '@utils/bucket'
+import { get, update } from '@utils/kv'
+import { decrypt, encrypt } from '@utils/thirdParty/crypto'
+import { APP_ID } from '@constants'
+import UserStore from '../user'
+import Fetch from './fetch'
+import { getSubjectSnapshot } from './utils'
+
+import type { Actions, Origin, SubjectId, SubjectType, UserId } from '@types'
+import type { SubjectSnapshot } from './types'
+
+export default class Action extends Fetch {
+  /** 获取条目信息快照, 尽可能在其他数据中组装条目信息 */
+  getSubjectSnapshot = async (subjectId: SubjectId): Promise<SubjectSnapshot | undefined> => {
+    let subjectSnapShot: SubjectSnapshot
+    let flag = false
+    if (!flag) {
+      await this.initSubjectV2([subjectId])
+
+      const subjectV2 = this.subjectV2(subjectId)
+      if (subjectV2._loaded && subjectV2.jp) {
+        flag = true
+        subjectSnapShot = getSubjectSnapshot(
+          subjectV2.date,
+          subjectV2.image,
+          subjectV2.jp,
+          subjectV2.cn,
+          subjectV2.rating?.score,
+          subjectV2.rating?.total,
+          subjectV2.rank
+        )
+      }
+    }
+
+    if (!flag) {
+      const last = getBucketId(subjectId)
+      const key = `subject${last}` as const
+      await this.init(key)
+
+      const subject = this.subject(subjectId)
+      if (subject._loaded && subject.name) {
+        flag = true
+        subjectSnapShot = getSubjectSnapshot(
+          subject.air_date,
+          subject.images?.common,
+          subject.name,
+          subject.name_cn,
+          subject.rating?.score,
+          subject.rating?.total,
+          subject.rank
+        )
+      }
+    }
+
+    if (!flag) {
+      await this.init('subjectFromOSS')
+
+      const subjectFromOSS = this.subjectFromOSS(subjectId)
+      if (subjectFromOSS._loaded && subjectFromOSS.name) {
+        flag = true
+        subjectSnapShot = getSubjectSnapshot(
+          subjectFromOSS.air_date,
+          subjectFromOSS.images?.common,
+          subjectFromOSS.name,
+          subjectFromOSS.name_cn,
+          subjectFromOSS.rating?.score,
+          subjectFromOSS.rating?.total,
+          subjectFromOSS.rank
+        )
+      }
+    }
+
+    return subjectSnapShot
+  }
+
+  /** 更新源头数据 */
+  updateOrigin = (data: Origin) => {
+    const key = 'origin'
+    this.setState({
+      [key]: data
+    })
+    this.save(key)
+  }
+
+  /** 上传源头数据到云端 */
+  uploadOrigin = () => {
+    const { id } = UserStore.userInfo
+    const { origin } = this.state
+    return update(
+      `origin_${id}`,
+      {
+        content: encrypt(JSON.stringify(origin), APP_ID)
+      },
+      true,
+      true
+    )
+  }
+
+  /** 恢复源头数据 */
+  downloadOrigin = async () => {
+    const { id } = UserStore.userInfo
+    let content: string
+
+    try {
+      const data = await get(`origin_${id}`)
+      if (typeof data?.content === 'string') {
+        content = data.content
+      }
+    } catch (error) {
+      return false
+    }
+    if (!content) return false
+
+    try {
+      const data = JSON.parse(decrypt(content.toString(), APP_ID))
+      if (typeof data?.base === 'object' && typeof data?.custom === 'object') {
+        const key = 'origin'
+        this.setState({
+          [key]: {
+            base: data.base,
+            custom: data.custom
+          }
+        })
+        this.save(key)
+        return true
+      }
+      return false
+    } catch (error) {
+      return false
+    }
+  }
+
+  /** 更新跳转数据 */
+  updateActions = (data: Actions) => {
+    const key = 'actions'
+    this.setState({
+      [key]: data
+    })
+    this.save(key)
+  }
+
+  /** 追踪TA的评论次数追踪 +1 */
+  trackComment = async (userId: UserId, type: SubjectType) => {
+    const STATE_KEY = 'commentTrack'
+    await this.init(STATE_KEY)
+
+    const ITEM_ARGS = [userId, type] as const
+    const ITEM_KEY = ITEM_ARGS.join('|')
+    const count = this[STATE_KEY](...ITEM_ARGS) + 1
+    this.setState({
+      [STATE_KEY]: {
+        [ITEM_KEY]: count
+      }
+    })
+    this.save(STATE_KEY)
+
+    this.log('trackComment', {
+      userId,
+      type,
+      count
+    })
+  }
+}

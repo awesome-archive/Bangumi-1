@@ -1,0 +1,40 @@
+/*
+ * @Author: czy0729
+ * @Date: 2026-06-02 10:00:00
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-06-02 10:00:00
+ */
+import type { ListEmpty, WithNavigation } from '@types'
+import type { RecommendTopicItem } from '@utils/kv/type'
+
+export type Props = WithNavigation<{
+  /** 标题 */
+  title?: string
+
+  /** 是否显示 */
+  visible: boolean
+
+  /** 加载中 */
+  loading: boolean
+
+  /** 推荐帖子数据 */
+  data: ListEmpty<RecommendTopicItem>
+
+  /** 图标大小 */
+  iconSize?: number
+
+  /** 到底文案 */
+  footerNoMoreText?: string
+
+  /** 是否使用外部浏览器打开帖子 */
+  openWebBrowser?: boolean
+
+  /** 显示推荐 */
+  onShow: () => void
+
+  /** 隐藏推荐 */
+  onHide: () => void
+
+  /** 加载更多 */
+  onLoadMore: () => void
+}>

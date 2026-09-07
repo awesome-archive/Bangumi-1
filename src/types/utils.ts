@@ -1,0 +1,199 @@
+/*
+ * 工具类
+ * @Author: czy0729
+ * @Date: 2022-06-27 13:12:03
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-09-01 04:17:50
+ */
+import type React from 'react'
+import type {
+  ColorValue as RNColorValue,
+  ImageProps,
+  ImageStyle as RNImageStyle,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  StyleProp,
+  TextStyle as RNTextStyle,
+  ViewStyle as RNViewStyle
+} from 'react-native'
+
+/** RNView StyleProp */
+export type ViewStyle = StyleProp<RNViewStyle>
+
+/** RNText StyleProp */
+export type TextStyle = StyleProp<RNTextStyle>
+
+/** RNImage StyleProp */
+export type ImageStyle = StyleProp<RNImageStyle>
+
+/** 格子布局分拆工具函数返回样式 */
+export type GridStyle = {
+  width: number
+  height: number
+  marginLeft: number
+}
+
+/** React.ReactNode */
+export type ReactNode = React.ReactNode
+
+/** React.ComponentType */
+export type ReactComponent = React.ComponentType<{
+  children?: ReactNode
+}>
+
+/** setTimeout or setInterval ref */
+export type TimerRef = ReturnType<typeof setTimeout> | null
+
+/** RNColorValue */
+export type ColorValue = RNColorValue
+
+/** 图片 uri */
+export type ImageSource = ImageProps['source']
+
+export type DeepReadonly<T> = T extends (...args: unknown[]) => unknown
+  ? T
+  : T extends Array<infer U>
+  ? ReadonlyArray<DeepReadonly<U>>
+  : T extends object
+  ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+  : T
+
+/** 只读 */
+export type ReadonlyResult<T> = T extends (...args: unknown[]) => infer R
+  ? DeepReadonly<R>
+  : DeepReadonly<T>
+
+/**
+ * 用于在 vscode 里面注释能直接显示展开的 type
+ * https://stackoverflow.com/questions/57683303/how-can-i-see-the-full-expanded-contract-of-a-typescript-type/57683652#57683652
+ * */
+export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
+
+/** 用于在 vscode 里面注释能直接显示展开的扩展 type */
+export type ExpandRecursively<T> = T extends object
+  ? T extends infer O
+    ? { [K in keyof O]: ExpandRecursively<O[K]> }
+    : never
+  : T
+
+/** 用于展平推到结果 */
+export type Flatten<T> = {
+  [K in keyof T]: T[K]
+}
+
+/** 复写 type */
+export type Override<P, S> = Expand<Omit<P, keyof S> & S>
+
+/** 深遍历 */
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends Function ? T[P] : T[P] extends object ? DeepPartial<T[P]> : T[P]
+}
+
+/** 取值 */
+export type ValueOf<T> = T[keyof T]
+
+/** 任意函数 */
+export type Fn = (...args: unknown[]) => unknown
+
+/** 检测是否为 any 类型 */
+export type IfAny<T, Y, N> = 0 extends 1 & T ? Y : N
+
+/** 选择函数 */
+export type SelectFn = <T, K = T>(arg1: T, arg2: K) => IfAny<T, K, IfAny<K, T, T | K>>
+
+/** 获取本地 state 的类型 */
+export type LocalState<T extends object, K extends object> = Expand<Omit<T, keyof K>>
+
+/** React Component Interface */
+// 默认 any: 裸用等效 any, 否则 FC<必选 props> 在 strictFunctionTypes 下逆变不兼容 ob/ob/c 等全部装饰器调用点
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type IReactComponent<T extends object = any> =
+  | React.FunctionComponent<T>
+  | React.ComponentClass<T>
+  | React.ClassicComponentClass<T>
+
+/** ref */
+export type Ref<T = unknown> = React.MutableRefObject<T | null>
+
+/** 取 Model 联合类型 */
+export type ModelValueOf<
+  T extends readonly Record<string, unknown>[],
+  K extends string = 'value'
+> = T[number][K]
+
+/** 普通对象 */
+// 默认 T = any 时与 any 求交坍缩为 any, 即裸 AnyObject 保持等效 any; 值收窄需先适配全库数百处读取点
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyObject<T extends object = any> = Record<string, any> & T
+
+/** 取数组项 */
+export type InferArray<T> = T extends (infer S)[] ? S : never
+
+/** 取函数第一个参数 */
+export type FnParams<T extends (...args: unknown[]) => unknown> = Parameters<T>[0]
+
+/** ScrollView 滑动事件对象类型 */
+export type ScrollEvent = NativeSyntheticEvent<NativeScrollEvent>
+
+export type Join<T extends string[], D extends string> = T extends [infer F, ...infer R]
+  ? // @ts-expect-error
+    `${F}${R extends [] ? '' : D}${Join<R, D>}`
+  : ''
+
+/** 取对象 Boolean 的值的键 */
+export type BooleanKeys<T> = Extract<
+  {
+    [K in keyof T]: T[K] extends boolean ? K : never
+  }[keyof T],
+  keyof T
+>
+
+/** 取对象非 Boolean 的值的键 */
+export type NonBooleanKeys<T> = Extract<
+  {
+    [K in keyof T]: T[K] extends boolean ? never : K
+  }[keyof T],
+  keyof T
+>
+
+/** 使一个键变成可选 */
+export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
+
+/** 允许只读 */
+export type MaybeReadonly<T> = T | ReadonlyResult<T>
+
+/** 列表带索引 renderItem */
+export type RenderItem<T, K = {}> = Override<
+  {
+    item: T
+    index?: number
+  },
+  K
+>
+
+/** 构造 SectionList 的 sections */
+export type Sections<T> = {
+  title: string
+  data: T[]
+}[]
+
+/** 列表节头 renderSectionHeader */
+export type RenderSectionHeader<T> = {
+  section: {
+    title: T
+  }
+}
+
+/** 列表带节 renderSection */
+export type RenderSection<T, K> = {
+  section: {
+    title: T
+  }
+  item: K
+}
+
+/** 取对象所有键值 */
+export type Keys<T extends object> = keyof T
+
+/** 取数组所有项 */
+export type Values<T extends readonly unknown[]> = T[number]

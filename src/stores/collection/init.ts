@@ -1,0 +1,81 @@
+/*
+ * @Author: czy0729
+ * @Date: 2019-07-15 10:48:39
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-03-24 06:42:20
+ */
+import { MODEL_COLLECTION_STATUS, MODEL_COLLECTIONS_ORDERBY, MODEL_SUBJECT_TYPE } from '@constants'
+
+import type { SubjectId } from '@types'
+import type {
+  Collection,
+  CollectionStatusLastFetchMS,
+  MosaicTile,
+  UserCollections,
+  UserCollectionsTags,
+  UserCollectionStatus,
+  UsersSubjectCollection
+} from './types'
+
+export const NAMESPACE = 'Collection'
+
+export const DEFAULT_SUBJECT_TYPE = MODEL_SUBJECT_TYPE.getLabel('动画') as 'anime'
+
+export const DEFAULT_COLLECTION_STATUS = MODEL_COLLECTION_STATUS.getValue('在看') as 'do'
+
+export const DEFAULT_ORDER = MODEL_COLLECTIONS_ORDERBY.getValue('收藏时间') as ''
+
+export const DEFAULT_USERS_SUBJECT_COLLECTION = {
+  rate: 0,
+  comment: '',
+  type: '',
+  update_at: '',
+  _loaded: false
+} as UsersSubjectCollection
+
+export const STATE = {
+  /** 条目收藏信息 */
+  collection: {} as Record<SubjectId, Collection>,
+
+  /** 用户收藏概览 */
+  userCollections: {} as Record<string, UserCollections>,
+
+  /** 用户收藏概览 (照片墙专用) */
+  userCollectionsForMilestone: {} as Record<string, UserCollections>,
+
+  /** 用户收藏概览的标签 */
+  userCollectionsTags: {} as Record<string, UserCollectionsTags>,
+
+  /** 用户收藏概览的标签 (照片墙专用) */
+  userCollectionsTagsForMilestone: {} as Record<string, UserCollectionsTags>,
+
+  /** @deprecated 所有收藏条目状态 */
+  userCollectionsMap: {} as UserCollectionStatus,
+
+  /** 条目的收藏状态 */
+  collectionStatus: {} as UserCollectionStatus,
+
+  /** 条目的收藏状态最后一次请求时间戳, 对应 collectionStatus 共同维护 */
+  _collectionStatusLastFetchMS: {} as CollectionStatusLastFetchMS,
+
+  /** 瓷砖进度 */
+  mosaicTile: {} as MosaicTile,
+
+  /** 特定用户特定条目的收藏信息 */
+  usersSubjectCollection: {
+    0: DEFAULT_USERS_SUBJECT_COLLECTION
+  }
+}
+
+export const LOADED = {
+  _collectionStatusLastFetchMS: false,
+  collection: false,
+  collectionStatus: false,
+  mosaicTile: false,
+  userCollections: false,
+  userCollectionsForMilestone: false,
+  userCollectionsMap: false,
+  userCollectionsTags: false,
+  userCollectionsTagsForMilestone: false,
+  usersSubjectCollection: false
+}

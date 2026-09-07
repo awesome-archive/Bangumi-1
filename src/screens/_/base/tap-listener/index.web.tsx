@@ -1,0 +1,45 @@
+/*
+ * @Author: czy0729
+ * @Date: 2023-06-02 22:47:16
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-08-21 00:00:00
+ */
+import { useEffect } from 'react'
+import { Component } from '@components'
+import { _, uiStore } from '@stores'
+import { r } from '@utils/dev'
+import { COMPONENT } from './ds'
+
+import type { Props as TapListenerProps } from './types'
+export type { TapListenerProps }
+
+export const TapListener = ({ children }: TapListenerProps) => {
+  r(COMPONENT)
+
+  useEffect(() => {
+    function handleTouchEnd(event) {
+      const touch = event.changedTouches[event.changedTouches.length - 1]
+      uiStore.setXY(Math.floor(touch.clientX), Math.floor(touch.clientY))
+    }
+
+    function handleMouseUp(event) {
+      uiStore.setXY(Math.floor(event.clientX), Math.floor(event.clientY))
+    }
+
+    window.document.addEventListener('touchend', handleTouchEnd)
+    window.document.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      window.document.removeEventListener('touchend', handleTouchEnd)
+      window.document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [])
+
+  return (
+    <Component id='base-tap-listener' style={_.container.flex}>
+      {children}
+    </Component>
+  )
+}
+
+export default TapListener

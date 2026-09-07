@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+message BangumiData {
+  int64 id = 1;
+  string j = 2;
+  string c = 3;
+  string t = 4;
+  Sites s = 5;
+}
+
+message Sites {
+  int64 b = 1;
+  int64 bhmt = 2;
+  int64 mal = 3;
+  int64 adb = 4;
+}
+
+message Payload {
+  repeated BangumiData payload = 1;
+}

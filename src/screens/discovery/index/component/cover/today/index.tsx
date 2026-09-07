@@ -1,0 +1,90 @@
+/*
+ * @Author: czy0729
+ * @Date: 2021-07-16 00:14:52
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-08-16 07:44:03
+ */
+import React from 'react'
+import { View } from 'react-native'
+import { observer } from 'mobx-react'
+import { LinearGradient } from 'expo-linear-gradient'
+import { Katakana, Squircle, Text, Touchable } from '@components'
+import { getCoverSrc } from '@components/cover/utils'
+import { Cover } from '@_'
+import { _, systemStore } from '@stores'
+import { cnjp, getCoverMedium, HTMLDecode, x18 } from '@utils'
+import { withT } from '@utils/fetch'
+import { useNavigation } from '@utils/hooks'
+import { linearColor } from '../../../ds'
+import { COMPONENT, WEEKDAY_CN } from './ds'
+import { memoStyles } from './styles'
+
+import type { Props } from './types'
+
+function CoverToday({ data }: Props) {
+  const navigation = useNavigation(COMPONENT)
+
+  const styles = memoStyles()
+
+  const { width, height } = styles.cover
+  const subjectId = data.id
+
+  return (
+    <Touchable
+      style={styles.item}
+      animate
+      onPress={withT(
+        () => {
+          navigation.push('Subject', {
+            subjectId,
+            _jp: data.name,
+            _cn: data.name_cn,
+            _image: getCoverSrc(data?.images?.common, width)
+          })
+        },
+        '发现.跳转',
+        {
+          to: 'Subject',
+          subjectId,
+          from: 'CoverToday'
+        }
+      )}
+    >
+      <Squircle width={width} height={height} radius={systemStore.coverRadius}>
+        <Cover
+          src={getCoverMedium(data?.images?.common)}
+          width={width}
+          height={height}
+          cdn={!x18(subjectId)}
+        />
+        <LinearGradient style={styles.linear} colors={linearColor} pointerEvents='none' />
+        <View style={styles.info} pointerEvents='none'>
+          <Text
+            type='__plain__'
+            size={_.device(10, 13)}
+            numberOfLines={1}
+            bold
+            pointerEvents='none'
+          >
+            {data.timeCN.slice(0, 2)}:{data.timeCN.slice(2)} · 周{WEEKDAY_CN[data.weekday]}
+          </Text>
+          <View style={_.mt.xs} pointerEvents='none'>
+            <Katakana.Provider
+              firstLineStyle={_.mt.sm}
+              type='__plain__'
+              size={_.device(10, 12)}
+              numberOfLines={2}
+              bold
+            >
+              <Katakana type='__plain__' size={_.device(10, 12)} numberOfLines={2} bold>
+                {HTMLDecode(cnjp(data.name_cn, data.name))}
+              </Katakana>
+            </Katakana.Provider>
+          </View>
+        </View>
+      </Squircle>
+    </Touchable>
+  )
+}
+
+export default observer(CoverToday)

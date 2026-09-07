@@ -1,0 +1,109 @@
+/*
+ * @Author: czy0729
+ * @Date: 2024-08-28 19:23:45
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-04-01 06:16:53
+ */
+import type { Expand, Id, SubjectId, SubjectType } from '@types'
+
+type Substring = `substrings/${'anime' | 'book' | 'game' | 'real' | 'alias' | 'addon'}`
+
+type TypeRank = `typerank/${SubjectType}`
+
+// anime-ids 已迁移到 protobuf (见 @utils/thirdParty/protobuf), 仅其余类型保留 JSON
+type TypeRankIds = `typerank/${Exclude<SubjectType, 'anime'>}-ids`
+
+export type JSONPath =
+  | Substring
+  | TypeRank
+  | TypeRankIds
+  | 'group'
+  | 'nsfw_id_distribution'
+  | 'thirdParty/ja.addon'
+  | 'thirdParty/h.min'
+  | 'thirdParty/wenku.min'
+
+export type JSONSubString = Record<string, SubjectId>
+
+export type JSONTypeRank = Record<string, SubjectId[]>
+
+export type JSONTypeRankIds = Record<string, SubjectId[]>
+
+export type JSONKatakana = Record<string, string>
+
+export type JSONGroup = {
+  t: string
+  n: number
+  i: number
+  u?: number
+}[]
+
+export type JSONMono = {
+  i: number
+  n: string
+  c: string
+  r: number
+  p?: 1
+}[]
+
+export type JSONJA = Record<string, SubjectId>
+
+export type JSONDouban = Record<Id, SubjectId>
+
+export type JSONHentai = {
+  id: number
+  f?: string
+  s?: number
+  r?: number
+  n?: number
+  a: string
+  t: number[]
+}[]
+
+export type JSONNSFW = {
+  i: number
+  t?: number
+  d?: string
+  s?: number
+  r?: number
+  l?: number
+  c?: number
+  e?: number
+}[]
+
+export type JSONWenku = {
+  i: number
+  f?: string
+  v?: number
+  m?: number
+  a?: number
+  b: string
+  u: string
+  c: number
+  h: number
+  p?: number
+  l: number
+  s?: number
+  r?: number
+  k?: number
+  j?: number[]
+}[]
+
+export type JSONData = Expand<
+  {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    [K in Substring]: JSONSubString
+  } & {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    [K in TypeRank]: JSONTypeRank
+  } & {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    [K in TypeRankIds]: JSONTypeRankIds
+  } & {
+    group: JSONGroup
+    nsfw_id_distribution: number[]
+    'thirdParty/ja.addon': JSONJA
+    'thirdParty/h.min': JSONHentai
+    'thirdParty/wenku.min': JSONWenku
+  }
+>

@@ -1,0 +1,98 @@
+/*
+ * @Author: czy0729
+ * @Date: 2025-06-09 15:12:10
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-07-16 22:19:19
+ */
+import React, { useCallback } from 'react'
+import { View } from 'react-native'
+import { observer } from 'mobx-react'
+import { HeaderPlaceholder } from '@components'
+import { ScrollView } from '@_'
+import { _, useStore } from '@stores'
+import { ITEM_MARGIN } from '../../ds'
+import Empty from '../empty'
+import Item from '../item'
+import Pagination from '../pagination'
+import { COMPONENT } from './ds'
+import { memoStyles } from './styles'
+
+import type { Ctx, List as ListType } from '../../types'
+
+function List() {
+  const { $ } = useStore<Ctx>(COMPONENT)
+
+  const handleRefresh = useCallback(() => {
+    return $.getList(true)
+  }, [$])
+
+  if (!$.state.show || !$.filterList.length) return null
+
+  const numColumns = _.device(2, _.portrait(3, 4))
+  const width = (_.window.width - (numColumns + 1) * ITEM_MARGIN) / numColumns
+
+  // 动态分配项目到较短的列
+  const columns: {
+    items: ListType[number][]
+    height: number
+  }[] = Array(numColumns)
+    .fill(null)
+    .map(() => ({
+      items: [],
+      height: 0
+    }))
+
+  $.filterList.forEach(item => {
+    // 找到当前高度最小的列，高度相等时选择索引更大的列以实现交替分配
+    const shortestColumn = columns.reduce((prev, curr, i) => {
+      if (curr.height < prev.height) return curr
+      if (curr.height === prev.height && i > columns.indexOf(prev)) return curr
+      return prev
+    })
+
+    // 计算当前项目的高度（width / 宽高比）
+    const itemHeight = width / (item.aspectRatio || 1)
+
+    // 添加到该列，并更新列高度
+    shortestColumn.items.push(item)
+    shortestColumn.height += itemHeight + ITEM_MARGIN
+  })
+
+  const showMoreKeywords = !$.state.fetching && $.list.length <= 6
+
+  const styles = memoStyles()
+
+  return (
+    <ScrollView
+      contentContainerStyle={styles.container}
+      onScroll={$.onScroll}
+      onRefresh={handleRefresh}
+    >
+      <View style={styles.wrap}>
+        <HeaderPlaceholder />
+
+        <View style={styles.list}>
+          {columns.map((column, index) => {
+            let y = 0
+            return (
+              <View key={`column-${index}`} style={styles.column}>
+                {column.items.map(item => {
+                  const w = Math.floor(width - 4)
+                  const h = Math.floor(w / (item.aspectRatio || 1))
+                  y += h + ITEM_MARGIN
+
+                  return <Item key={item.id} width={w} height={h} y={y - h} {...item} />
+                })}
+              </View>
+            )
+          })}
+        </View>
+        {showMoreKeywords && <Empty showPagination={false} />}
+      </View>
+
+      <Pagination />
+    </ScrollView>
+  )
+}
+
+export default observer(List)

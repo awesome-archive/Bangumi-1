@@ -1,0 +1,88 @@
+/*
+ * @Author: czy0729
+ * @Date: 2022-07-23 13:59:30
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-08-16 08:15:09
+ */
+import React from 'react'
+import { observer } from 'mobx-react'
+import { Flex, Highlight, Katakana, Text } from '@components'
+import { _ } from '@stores'
+import { cnjp, getVisualLength } from '@utils'
+
+import type { Props } from './types'
+
+function Title({ name, nameCn, comments, highlight }: Props) {
+  const top = cnjp(nameCn, name)
+  const bottom = cnjp(name, nameCn)
+
+  const title = top || bottom
+  const showBottom = !!bottom && bottom !== top
+  const numberOfLines = showBottom ? 2 : 3
+
+  const getSize = (len: number, steps: [number, number][]) =>
+    steps.find(([limit]) => len >= limit)?.[1] ?? steps[steps.length - 1][1]
+
+  const size = getSize(getVisualLength(top || bottom), [
+    [20, 12],
+    [14, 13],
+    [12, 14],
+    [0, 15]
+  ])
+  const sizeBottom = getSize(bottom.length, [
+    [32, 9],
+    [24, 10],
+    [16, 11],
+    [0, 12]
+  ])
+
+  return (
+    <>
+      {title &&
+        (highlight ? (
+          <Flex>
+            <Flex.Item>
+              <Highlight size={size} numberOfLines={numberOfLines} bold value={highlight}>
+                {title}
+              </Highlight>
+            </Flex.Item>
+            {comments && (
+              <Text type='main' size={11} bold>
+                {' '}
+                {comments}
+              </Text>
+            )}
+          </Flex>
+        ) : (
+          <Katakana.Provider size={size} bold numberOfLines={numberOfLines}>
+            <Katakana size={size} bold>
+              {title}
+            </Katakana>
+            {comments && (
+              <Text type='main' lineHeight={size}>
+                {' '}
+                {comments}
+              </Text>
+            )}
+          </Katakana.Provider>
+        ))}
+
+      {showBottom && (
+        <Katakana.Provider
+          firstLineStyle={_.mt.sm}
+          type='sub'
+          size={sizeBottom}
+          lineHeight={13}
+          bold
+          numberOfLines={1}
+        >
+          <Katakana type='sub' size={sizeBottom} lineHeight={13} bold numberOfLines={1}>
+            {bottom}
+          </Katakana>
+        </Katakana.Provider>
+      )}
+    </>
+  )
+}
+
+export default observer(Title)

@@ -1,1 +1,25 @@
-{ "online": 4102 }
+{
+  "online": "6576",
+  "VERSION_MONO": "20201216",
+  "VERSION_SUBJECT": "20210607",
+  "VERSION_OSS": "20210611",
+  "VERSION_AVATAR": "20210609",
+  "VERSION_STATIC": "20210627",
+  "VERSION_RAKUEN": "20210607",
+  "VERSION_ANIME": "20210628",
+  "VERSION_WENKU": "20210627",
+  "VERSION_MANGA": "20210628",
+  "VERSION_GAME": "20210630",
+  "SITE_AGEFANS": "https://agefans.cc",
+  "SITE_XUNBO": "https://www.xbdm.org",
+  "SITE_RRYS": "http://www.rrys2020.com",
+  "SITE_WK8": "https://www.wenku8.net",
+  "SITE_77MH": "https://www.77mh.co",
+  "SITE_COMIC123": "https://m.comic123.net",
+  "SITE_MANHUADB": "https://www.manhuadb.com",
+  "SITE_HD": "gh/czybot/m@2021011902/out",
+  "HD": [65040, 121380, 143597, 182434, 218102, 305429],
+  "HD_FULL": [31469],
+  "GOOGLE_AUTH": false,
+  "X18": true
+}

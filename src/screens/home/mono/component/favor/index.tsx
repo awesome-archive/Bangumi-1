@@ -1,0 +1,43 @@
+/*
+ * @Author: czy0729
+ * @Date: 2021-11-27 07:01:50
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2025-06-26 19:50:41
+ */
+import React from 'react'
+import { Heatmap, Iconfont, Touchable } from '@components'
+import { _, useStore } from '@stores'
+import { useObserver } from '@utils/hooks'
+import { COMPONENT } from './ds'
+import { styles } from './styles'
+
+import type { Ctx } from '../../types'
+
+function Favor() {
+  const { $ } = useStore<Ctx>(COMPONENT)
+
+  return useObserver(() => {
+    if ($.mono.collectUrl) {
+      return (
+        <Touchable style={styles.touch} onPress={$.doCollect}>
+          <Iconfont size={20} name='md-favorite-outline' color={_.colorTitle} />
+          <Heatmap id='人物.收藏人物' />
+          <Heatmap right={52} id='人物.取消收藏人物' transparent />
+        </Touchable>
+      )
+    }
+
+    if ($.mono.eraseCollectUrl) {
+      return (
+        <Touchable style={styles.touch} onPress={$.doEraseCollect}>
+          <Iconfont size={20} name='md-favorite' color={_.colorMain} />
+          <Heatmap id='人物.取消收藏人物' />
+        </Touchable>
+      )
+    }
+
+    return null
+  })
+}
+
+export default Favor

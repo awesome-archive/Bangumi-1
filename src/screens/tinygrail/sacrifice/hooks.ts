@@ -1,0 +1,33 @@
+/*
+ * @Author: czy0729
+ * @Date: 2024-03-06 09:50:15
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-05-11 07:54:21
+ */
+import { useInitStore } from '@stores'
+import { useMount, useRunAfter } from '@utils/hooks'
+import store from './store'
+
+import type { NavigationProps } from '@types'
+import type { Ctx } from './types'
+
+/** 资产重组页面逻辑 */
+export function useTinygrailSacrificePage(props: NavigationProps) {
+  const context = useInitStore<Ctx['$']>(props, store)
+  const { $ } = context
+
+  useRunAfter(() => {
+    $.init()
+  })
+
+  /** 页面销毁 */
+  useMount(() => {
+    return () => {
+      $.setState({
+        focused: false
+      })
+    }
+  })
+
+  return context
+}

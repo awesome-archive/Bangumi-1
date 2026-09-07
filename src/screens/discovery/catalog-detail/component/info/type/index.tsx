@@ -1,0 +1,49 @@
+/*
+ * @Author: czy0729
+ * @Date: 2025-01-07 15:35:56
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-04-20 22:22:58
+ */
+import React, { useMemo } from 'react'
+import { observer } from 'mobx-react'
+import { Flex, SegmentedControl } from '@components'
+import { _, useStore } from '@stores'
+import { COMPONENT } from './ds'
+import { memoStyles } from './styles'
+
+import type { Ctx } from '../../../types'
+
+function Type() {
+  const { $ } = useStore<Ctx>(COMPONENT)
+
+  const { type, typeData } = $
+  const { length } = typeData
+
+  const selectedIndex = useMemo(() => typeData.findIndex(item => item.startsWith(type)), [typeData, type])
+  if (length <= 1) return null
+
+  const { _loaded } = $.state
+  if (!_loaded) return null
+
+  const styles = memoStyles()
+  const isMini = length > 5
+
+  return (
+    <Flex style={_.mt.md} justify='center'>
+      <SegmentedControl
+        style={[
+          styles.segment,
+          {
+            width: (isMini ? 52 : 62) * length
+          }
+        ]}
+        size={isMini ? 10 : 11}
+        values={typeData}
+        selectedIndex={selectedIndex}
+        onValueChange={$.onType}
+      />
+    </Flex>
+  )
+}
+
+export default observer(Type)

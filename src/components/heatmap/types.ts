@@ -1,0 +1,25 @@
+/*
+ * @Author: czy0729
+ * @Date: 2022-10-19 13:56:40
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2022-10-19 13:57:01
+ */
+import type { EventKeys } from '@constants'
+import type { EventType } from '@types'
+import type Control from './control'
+
+export type Props = {
+  [key: string]: string | number | boolean
+} & {
+  id?: EventKeys
+  right?: number
+  bottom?: number
+  transparent?: boolean
+  data?: EventType
+  mini?: boolean
+}
+
+export type HeatmapComponentType = {
+  (props: Props): JSX.Element
+  Control: typeof Control
+}

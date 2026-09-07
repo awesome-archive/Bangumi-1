@@ -1,0 +1,63 @@
+/*
+ * @Author: czy0729
+ * @Date: 2023-07-03 07:18:04
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-08-25 05:10:49
+ */
+import React from 'react'
+import { observer } from 'mobx-react'
+import { Cover, Flex, Link, Text } from '@components'
+import { fixedAll } from '@components/avatar/utils'
+import { _, systemStore, useStore } from '@stores'
+import { HTMLDecode, x18 } from '@utils'
+import { COMPONENT } from './ds'
+import { memoStyles } from './styles'
+
+import type { SubjectFromHtmlCatalogItem } from '@stores/subject/types'
+import type { WithItem } from '@types'
+import type { Ctx } from '../../../types'
+
+function Item({ item }: WithItem<SubjectFromHtmlCatalogItem>) {
+  const { $ } = useStore<Ctx>(COMPONENT)
+
+  const styles = memoStyles()
+  const title = HTMLDecode(item.title)
+
+  return (
+    <Link
+      style={styles.item}
+      path='CatalogDetail'
+      params={{
+        catalogId: item.id,
+        _hideScore: systemStore.setting.hideScore
+      }}
+      eventId='条目.跳转'
+      eventData={{
+        to: 'CatalogDetail',
+        from: '条目',
+        catalogId: item.id
+      }}
+    >
+      <Flex>
+        <Cover
+          src={fixedAll(item.avatar, _.r(40))}
+          size={_.r(40)}
+          radius
+          type='目录'
+          cdn={!x18($.subjectId, $.cn || $.jp)}
+        />
+        <Flex.Item style={_.ml.md}>
+          <Text style={styles.text} size={9} lineHeight={12} bold numberOfLines={2}>
+            {title}
+            {title.length <= 6 ? '\n' : ' '}
+            <Text size={9} lineHeight={12} type='sub'>
+              {HTMLDecode(item.name)}
+            </Text>
+          </Text>
+        </Flex.Item>
+      </Flex>
+    </Link>
+  )
+}
+
+export default observer(Item)

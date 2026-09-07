@@ -1,0 +1,166 @@
+/*
+ * @Author: czy0729
+ * @Date: 2025-06-09 14:51:34
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-05-07 22:59:01
+ */
+import { monoStore } from '@stores'
+import { getTimestamp, info, throttle } from '@utils'
+import { get, update } from '@utils/kv'
+import { D7 } from '@constants'
+import { TEXT_FETCHING_ABORT, TEXT_FETCHING_WAIT } from '../ds'
+import { encodeKey, processImages, src, tag } from '../utils'
+import Computed from './computed'
+
+import type { Id } from '@types'
+import type { List, Srcs } from '../types'
+
+/** 此功能必须完成一次完整的请求流程, 才允许进行下一次流程 */
+let globalFetching = false
+
+export default class Fetch extends Computed {
+  checkGlobalFetching = () => {
+    return globalFetching
+  }
+
+  updateProgress = throttle((percent: string) => {
+    this.setState({
+      percent
+    })
+  }, 800)
+
+  /** 获取列表数据 */
+  fetchList = async (forceRefresh: boolean = false) => {
+    if (!forceRefresh && this.list.length) {
+      if (this.list.every(item => !!item.tags)) return true
+    }
+
+    if (this.state.fetching) {
+      info(TEXT_FETCHING_WAIT)
+      return false
+    }
+
+    if (globalFetching) {
+      info(TEXT_FETCHING_ABORT)
+      return false
+    }
+
+    const { page } = this.state
+    const key = `pic_error_${this.keyword}` as const
+    if (!forceRefresh) {
+      const check = await get(encodeKey(key))
+      if (check?.ts && Number(check.ts) && getTimestamp() - Number(check.ts) <= D7) {
+        this.setState({
+          empty: true
+        })
+        if (page === 1) monoStore.updatePicTotal(this.keyword, 0)
+        return false
+      }
+    }
+
+    this.setState({
+      fetching: true,
+      percent: ''
+    })
+
+    globalFetching = true
+
+    const result = await tag(
+      this.keyword,
+      page,
+      this.onListProgress,
+      this.onSrcsProgress,
+      forceRefresh
+    )
+
+    globalFetching = false
+
+    if (!result) {
+      this.setState({
+        fetching: false,
+        percent: '',
+        empty: true
+      })
+
+      if (page === 1) {
+        update(encodeKey(key), {
+          ts: getTimestamp()
+        })
+        monoStore.updatePicTotal(this.keyword, 0)
+      }
+      return false
+    }
+
+    const { list, pagination } = result
+    this.setState({
+      list: {
+        [page]: processImages(list),
+        _loaded: getTimestamp()
+      },
+      pageTotal: pagination.pageTotal,
+      percent: '',
+      fetching: false
+    })
+    this.save()
+  }
+
+  /** 获取实际地址 */
+  fetchSrcs = async (ids?: Id[]) => {
+    const fetchIds =
+      ids || this.list.filter(item => !this.image(item.id)).map(item => item.id) || []
+    if (!fetchIds.length) return true
+
+    if (this.state.fetching) {
+      info(TEXT_FETCHING_WAIT)
+      return false
+    }
+
+    if (globalFetching) {
+      info(TEXT_FETCHING_ABORT)
+      return false
+    }
+
+    this.setState({
+      fetching: true,
+      percent: ''
+    })
+
+    globalFetching = true
+
+    const srcs = await src(fetchIds, (data, percent) => {
+      this.onSrcsProgress(data, percent)
+    })
+
+    globalFetching = false
+
+    this.setState({
+      srcs,
+      fetching: false,
+      percent: ''
+    })
+    this.save()
+  }
+
+  /** 提前更新列表数据 */
+  onListProgress = (data: List, percent?: string) => {
+    this.setState({
+      list: {
+        [this.state.page]: processImages(data),
+        _loaded: getTimestamp()
+      }
+    })
+
+    if (percent) this.updateProgress(percent)
+  }
+
+  /** 提前更新实际地址数据 */
+  onSrcsProgress = (data: Srcs, percent?: string) => {
+    this.setState({
+      srcs: data
+    })
+
+    if (percent) this.updateProgress(percent)
+
+    this.save()
+  }
+}

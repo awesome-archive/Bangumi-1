@@ -1,0 +1,51 @@
+/*
+ * @Author: czy0729
+ * @Date: 2022-12-06 05:47:56
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-09-01 22:44:04
+ */
+import { COMPONENT, CSV_HEADS } from '../ds'
+
+import type { Loaded, SubjectId } from '@types'
+import type { Bottom, Item } from '../types'
+
+/** 默认不选中的列 */
+const DEFAULT_EXCLUDE_COLUMNS = new Set(['封面', '网址'])
+
+export const NAMESPACE = `Screen${COMPONENT}` as const
+
+export const EXCLUDE_STATE = {
+  progress: {
+    fetching: false,
+    message: '',
+    current: 0,
+    total: 0
+  },
+
+  /** 是否显示导入框 */
+  modal: false as boolean,
+
+  /** 导入数据 */
+  upload: {} as Record<SubjectId, Item>,
+
+  /** 置底数据 */
+  bottom: {
+    current: 0
+  } as Bottom
+}
+
+export const STATE = {
+  ...EXCLUDE_STATE,
+  anime: [] as Item[],
+  book: [] as Item[],
+  music: [] as Item[],
+  game: [] as Item[],
+  real: [] as Item[],
+  last: 0,
+
+  /** 导出包含的列名 (默认选中除网址、封面外的所有列) */
+  includeColumns: CSV_HEADS.filter(head => !DEFAULT_EXCLUDE_COLUMNS.has(head)) as string[],
+
+  /** 页面初始化完成 */
+  _loaded: false as Loaded
+}

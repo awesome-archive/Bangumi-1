@@ -1,0 +1,60 @@
+/*
+ * @Author: czy0729
+ * @Date: 2022-10-18 04:21:53
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-03-20 05:38:56
+ */
+import { _ } from '@stores'
+import { EVENT, FROZEN_FN } from '@constants'
+
+import type { BlogId, EventType, Navigation, RakuenNewFloorStyleCn, TopicId, UserId } from '@types'
+import type { LikesUsers } from '../../../base/likes/types'
+import type { Props } from '../types'
+import type { memoStyles } from './styles'
+import type { FriendsMap, QuoteUsersMap } from './types'
+
+export const DEFAULT_PROPS = {
+  navigation: {} as Navigation,
+  styles: {} as ReturnType<typeof memoStyles>,
+  extraStyle: {} as Props['extraStyle'],
+  topicId: '' as TopicId | BlogId,
+  authorId: '' as Props['authorId'],
+  avatar: '' as Props['avatar'],
+  blockKeywords: [] as string[],
+  erase: '' as Props['erase'],
+  filterDelete: true as boolean,
+  floor: '' as Props['floor'],
+  directFloor: false as boolean,
+  id: 0 as Props['id'],
+  isBlockUser: false as boolean | ((userId: UserId, userName: string) => boolean),
+  matchLink: false as boolean,
+  message: '' as string,
+  myFriendsMap: {} as FriendsMap,
+  postId: '' as Props['postId'],
+  postUsersMap: {} as QuoteUsersMap,
+  quote: true as boolean,
+  quoteAvatar: true as boolean,
+  wide: false as boolean,
+  readedTime: '' as string | number,
+  replySub: '' as Props['replySub'],
+  time: '' as Props['time'],
+  translate: '' as string,
+  uid: '' as UserId,
+  url: '' as string,
+  userId: '' as Props['userId'],
+  userName: '' as Props['userName'],
+  formhash: '' as string,
+  like: false as boolean,
+  likeType: '' as string,
+  newFloorStyle: '角标' as RakuenNewFloorStyleCn,
+  event: EVENT as EventType,
+  onJumpTo: FROZEN_FN,
+  onLikesLongPress: FROZEN_FN as (list: LikesUsers, emoji: number) => void,
+  onShowFixedTextare: FROZEN_FN
+}
+
+export const REG_BGM = /^<img src="\/img\/smiles\/tv\/\d+\.gif" smileid="\d+" alt="\(bgm\d+\)">$/
+
+export const REG_PLUS = /\+\d/
+
+export const AVATAR_WIDTH = _.r(32)

@@ -1,0 +1,26 @@
+/*
+ * @Author: czy0729
+ * @Date: 2025-01-17 14:49:56
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-09-03 23:30:27
+ */
+import { useEffect } from 'react'
+import { Keyboard } from 'react-native'
+import { IOS } from '@constants/env'
+
+/** 安卓展开键盘需要自行监听 */
+function useKeyboardShow(onFocus: () => void) {
+  useEffect(() => {
+    if (IOS) return
+
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+      onFocus()
+    })
+
+    return () => {
+      keyboardDidShowListener.remove()
+    }
+  }, [onFocus])
+}
+
+export default useKeyboardShow

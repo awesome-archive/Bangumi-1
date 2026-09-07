@@ -1,0 +1,79 @@
+/*
+ * @Author: czy0729
+ * @Date: 2024-09-02 11:57:54
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-05-30 08:44:00
+ */
+
+/**
+ * 主站域
+ *  - 因实装了 Proxy 模式，除了此文件其他地方不应该再引用这个常量，除非在请求前正确替换
+ * */
+export const HOST_NAME = 'bgm.tv'
+
+/** 主站域名 */
+export const HOST = `https://${HOST_NAME}` as const
+
+/** 备用域名 */
+export const HOST_2 = 'https://bangumi.tv'
+
+/** 备用域名 2 */
+export const HOST_3 = 'https://chii.in'
+
+/** 源站图片域名（协议相对） */
+export const HOST_IMAGE = '//lain.bgm.tv'
+
+/** 静态资源域 */
+export const HOST_BGM_STATIC = `https:${HOST_IMAGE}`
+
+/** Track trending anime with real-time analytics from Bangumi */
+export const HOST_NETABA = 'https://netaba.re'
+
+/** @deprecated jsDelivr */
+export const HOST_CDN = 'https://cdn.jsdelivr.net'
+
+/** @deprecated 免费图床 */
+export const HOST_IMAGE_UPLOAD = 'https://p.sda1.dev'
+
+/** 免费图床 by wataame */
+export const HOST_IMAGE_UPLOAD_RYMK = 'https://lsky.ry.mk'
+
+/** @deprecated 登录 v1.0 oauth 地址 */
+export const URL_OAUTH = `${HOST}/oauth/authorize` as const
+
+/** 授权跳转地址 */
+export const URL_OAUTH_REDIRECT = `${HOST}/dev/app` as const
+
+/** 项目帖子地址 */
+export const URL_FEEDBACK = `${HOST}/group/topic/350677` as const
+
+/** 空头像地址 */
+export const URL_DEFAULT_AVATAR = '/icon.jpg'
+
+/** 空角色地址 */
+export const URL_DEFAULT_MONO = '/info_only.png'
+
+/** 指南 (语雀) */
+export const URL_ZHINAN = 'https://www.yuque.com/chenzhenyu-k0epm/znygb4'
+
+/** 关于 */
+export const URL_ABOUT = `${URL_ZHINAN}/bw81ax?singleDoc` as const
+
+/** 获取 */
+export const URL_RELEASE = `${URL_ZHINAN}/ratl2b?singleDoc` as const
+
+/** 隐私条款 */
+export const URL_PRIVACY = `${URL_ZHINAN}/oi3ss2?singleDoc` as const
+
+/** 开发状况 */
+export const URL_DEV =
+  'https://adaptable-playroom-795.notion.site/2f26b642dc714c4ca4d3e8701072c591?v=fe42d34dbb354e28b5221078780f93bd'
+
+/** 开发问卷 */
+export const URL_WENJUAN = 'https://wj.qq.com/s2/9645600/92c2/'
+
+/** 客户端网页版 */
+export const URL_SPA = 'https://bangumi-app.5t5.top'
+
+/** jQuery */
+export const URL_PKG_JQUERY = 'https://unpkg.com/jquery@3.6.0/dist/jquery.min.js'

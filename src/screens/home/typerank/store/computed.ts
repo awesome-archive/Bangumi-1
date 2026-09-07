@@ -1,0 +1,38 @@
+/*
+ * @Author: czy0729
+ * @Date: 2024-08-18 04:07:48
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-07-03 20:38:01
+ */
+import { computed } from 'mobx'
+import { subjectStore } from '@stores'
+import { computedFn } from '@utils/computed-fn'
+import State from './state'
+
+import type { SubjectId } from '@types'
+
+export default class Computed extends State {
+  @computed get tag() {
+    return this.params.tag || ''
+  }
+
+  @computed get type() {
+    return this.params.type || 'anime'
+  }
+
+  @computed get subjectId() {
+    return this.params.subjectId || 0
+  }
+
+  @computed get total() {
+    return this.state?.ids?.length || 0
+  }
+
+  subject = computedFn((id: SubjectId) => {
+    return subjectStore.subjectV2(id)
+  })
+
+  subjectOSS = computedFn((id: SubjectId) => {
+    return this.state.subjects[`subject_${id}`] || {}
+  })
+}

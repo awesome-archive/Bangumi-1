@@ -1,0 +1,130 @@
+/*
+ * @Author: czy0729
+ * @Date: 2022-08-11 09:18:56
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-09-03 23:26:55
+ */
+import { Dimensions } from 'react-native'
+import { HOST_AC_MEDIA } from '@constants/cdn'
+import { HOST } from '@constants/host'
+
+import type { Id, SubjectId, UserId } from '@types'
+
+const date = new Date()
+
+/** 随机数因子 */
+export const RANDOM_FACTOR = Number(String(date.getSeconds()).slice(0, 1))
+
+/** 敏感字符串集 */
+export const NSFW_KEYWORDS = ['乳', '交', '性', '慰', '淫', '肛', '黄油'] as const
+
+/** 敏感字符串集 (标签) */
+export const X18_DS = [
+  ...NSFW_KEYWORDS,
+  '裏',
+  '18',
+  'bl',
+  'gal',
+  'ntr',
+  '伪',
+  '兵',
+  '成',
+  '拔',
+  '禁',
+  '肉',
+  '里'
+] as const
+
+/** 年 */
+export const YEAR = date.getFullYear()
+
+/** 没有图片的标识 */
+export const NO_IMGS = ['//lain.bgm.tv/pic/cover/c/', '/img/no_icon_subject.png']
+
+/** 文字对应在应用里面的颜色 */
+export const TYPE_MAP = {
+  想看: 'main',
+  想玩: 'main',
+  想读: 'main',
+  想听: 'main',
+  看过: 'warning',
+  玩过: 'warning',
+  读过: 'warning',
+  听过: 'warning',
+  在看: 'primary',
+  在玩: 'primary',
+  在读: 'primary',
+  在听: 'primary',
+  搁置: 'wait',
+  抛弃: 'dropped'
+} as const
+
+/** 缩写对应的站点 */
+export const SITE_MAP = {
+  a: 'acfun',
+  b: 'bilibili',
+  s: 'sohu',
+  y: 'youku',
+  q: 'qq',
+  i: 'iqiyi',
+  l: 'letv',
+  p: 'pptv',
+  m: 'mgtv',
+  ni: 'nicovideo',
+  n: 'netflix',
+  bhmt: 'bilibili-hmt',
+  mal: 'MyAnimeList',
+  adb: 'AniDB'
+} as const
+
+/** 隐私条款弹窗 key */
+export const PRIVACY_STATE = 'bangumi|privacy'
+
+/** 设备屏幕高度 */
+export const { height: HEIGHT } = Dimensions.get('window')
+
+/** 条目中文名缓存（日文名 → 中文名） */
+export const FIND_SUBJECT_CN_CACHE_MAP = new Map<string, string>()
+
+/** 条目日文名缓存（中文名 → 日文名） */
+export const FIND_SUBJECT_JP_CACHE_MAP = new Map<string, string>()
+
+/** 敏感条目判断缓存（subjectId → 是否敏感） */
+export const NSFW_CACHE_MAP = new Map<SubjectId, boolean>()
+
+/** 评分数字对应文字 */
+export const RATING_MAP = {
+  1: '不忍直视',
+  2: '很差',
+  3: '差',
+  4: '较差',
+  5: '不过不失',
+  6: '还行',
+  7: '推荐',
+  8: '力荐',
+  9: '神作',
+  10: '超神作'
+} as const
+
+/** 各站点条目链接模板 */
+export const BANGUMI_URL_TEMPLATES = {
+  acfun: (id: Id) => `https://www.acfun.cn/bangumi/aa${id}`,
+  bangumi: (id: Id) => `${HOST}/subject/${id}`,
+  bilibili: (id: Id) => `${HOST_AC_MEDIA}/md${id}/`,
+  iqiyi: (id: Id) => `https://www.iqiyi.com/${id}.html`,
+  letv: (id: Id) => `https://www.le.com/comic/${id}.html`,
+  mgtv: (id: Id) => `https://www.mgtv.com/h/${id}.html`,
+  netflix: (id: Id) => `https://www.netflix.com/title/${id}`,
+  nicovideo: (id: Id) => `https://ch.nicovideo.jp/${id}`,
+  pptv: (id: Id) => `http://v.pptv.com/page/${id}.html`,
+  qq: (id: Id) => `https://v.qq.com/detail/${id}.html`,
+  sohu: (id: Id) => `https://tv.sohu.com/${id}`,
+  youku: (id: Id) => `https://list.youku.com/show/id_z${id}.html`,
+  tmdb: (id: Id) => `https://www.themoviedb.org/${id}`,
+  anidb: (id: Id) => `https://anidb.net/anime/${id}`,
+  aniList: (id: Id) => `https://anilist.co/anime/${id}`,
+  myanimelist: (id: Id) => `https://myanimelist.net/anime/${id}`
+} as const
+
+/** 用户头像缓存（userId → 头像 URL 或 false） */
+export const GET_AVATAR_CACHE_MAP = new Map<UserId, string | false>()

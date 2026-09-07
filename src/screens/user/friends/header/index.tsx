@@ -1,0 +1,64 @@
+/*
+ * @Author: czy0729
+ * @Date: 2022-03-16 01:23:50
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-01-21 11:30:10
+ */
+import React, { useCallback } from 'react'
+import { observer } from 'mobx-react'
+import { HeaderV2, HeaderV2Popover } from '@components'
+import { IconTouchable } from '@_'
+import { _, useStore } from '@stores'
+import { alert, confirm, info, open } from '@utils'
+import { t } from '@utils/fetch'
+import { TEXT_MENU_BROWSER, TEXT_MENU_INFORMATION } from '@constants'
+import { COMPONENT, DATA } from './ds'
+
+import type { Ctx } from '../types'
+
+function Header() {
+  const { $ } = useStore<Ctx>(COMPONENT)
+
+  const handleHeaderRight = useCallback(
+    () => (
+      <>
+        <IconTouchable
+          name='md-access-time'
+          color={_.colorTitle}
+          size={20}
+          onPress={() => {
+            if ($.state.fetching) {
+              info('正在获取中，请稍等')
+              return
+            }
+
+            confirm(
+              `批量获取所有好友最近一次的时间胶囊创建时间（单次最大400个），确定？`,
+              $.fetchFriendsActive,
+              '提示'
+            )
+          }}
+        />
+        <HeaderV2Popover
+          data={DATA}
+          onSelect={title => {
+            if (title === TEXT_MENU_BROWSER) {
+              open($.url)
+            } else if (title === TEXT_MENU_INFORMATION) {
+              alert(`点击头像前往空间\n长按头像展开菜单`)
+            }
+
+            t('好友.右上角菜单', {
+              key: title
+            })
+          }}
+        />
+      </>
+    ),
+    [$]
+  )
+
+  return <HeaderV2 title={$.title} alias='好友' hm={$.hm} headerRight={handleHeaderRight} />
+}
+
+export default observer(Header)

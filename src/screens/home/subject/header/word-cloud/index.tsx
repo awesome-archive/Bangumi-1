@@ -1,0 +1,49 @@
+/*
+ * @Author: czy0729
+ * @Date: 2025-02-04 07:09:13
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-08-25 05:15:09
+ */
+import React from 'react'
+import { observer } from 'mobx-react'
+import { Image, Touchable } from '@components'
+import { useStore } from '@stores'
+import { t } from '@utils/fetch'
+import { GROUP_THUMB_MAP } from '@assets/images'
+import { COMPONENT } from './ds'
+import { memoStyles } from './styles'
+
+import type { Ctx } from '../../types'
+
+function WordCloud() {
+  const { $, navigation } = useStore<Ctx>(COMPONENT)
+
+  const styles = memoStyles()
+
+  return (
+    <Touchable
+      style={styles.wordCloud}
+      onPress={() => {
+        navigation.push('WordCloud', {
+          subjectId: $.subjectId,
+          _type: $.type
+        })
+
+        t('条目.跳转', {
+          to: 'WordCloud',
+          subjectId: $.subjectId
+        })
+      }}
+    >
+      <Image
+        src={GROUP_THUMB_MAP.wordcloud}
+        size={19}
+        resizeMode='contain'
+        placeholder={false}
+        skeleton={false}
+      />
+    </Touchable>
+  )
+}
+
+export default observer(WordCloud)

@@ -1,0 +1,71 @@
+/*
+ * @Author: czy0729
+ * @Date: 2021-01-21 13:53:18
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-03-20 07:37:42
+ */
+import React from 'react'
+import { observer } from 'mobx-react'
+import { Text } from '@components'
+import { systemStore, useStore } from '@stores'
+import { WEEK_DAY_MAP } from '../../ds'
+import { COMPONENT } from './ds'
+import { styles } from './styles'
+
+import type { Ctx } from '../../../types'
+import type { Props } from './types'
+
+function OnAir({ subjectId, typeCn }: Props) {
+  const { $ } = useStore<Ctx>(COMPONENT)
+
+  if (typeCn !== '动画' && typeCn !== '三次元') return null
+
+  // 防止完结的番剧因放送数据更新不及时, 导致一直显示放送中的问题
+  const current = $.currentOnAir(subjectId)
+  if (current >= 8 && !systemStore.setting.homeOnAir) {
+    const total = $.epsCount(subjectId, true)
+    if (total >= 8 && current === total) return null
+  }
+
+  if ($.isToday(subjectId)) {
+    const { h, m } = $.onAirCustom(subjectId)
+    const t = [h, m].filter(item => !!item)
+
+    return (
+      <Text style={styles.onAir} type='success' size={13} lineHeight={14} bold>
+        今天 {t.join(':')}
+      </Text>
+    )
+  }
+
+  if ($.isNextDay(subjectId)) {
+    const { h, m } = $.onAirCustom(subjectId)
+    const t = [h, m].filter(item => !!item)
+
+    return (
+      <Text style={styles.onAir} type='sub' size={13} lineHeight={14} bold>
+        明天 {t.join(':')}
+      </Text>
+    )
+  }
+
+  if (systemStore.setting.homeOnAir) {
+    const { weekDay, h, m, isOnair } = $.onAirCustom(subjectId)
+    if (!isOnair) return null
+
+    if (WEEK_DAY_MAP[weekDay] && h && m) {
+      const weekDayText = `周${WEEK_DAY_MAP[weekDay]}`
+      const t = [h, m].filter(item => !!item)
+
+      return (
+        <Text style={styles.onAir} type='sub' size={13} lineHeight={14} bold>
+          {weekDayText} {t.join(':')}
+        </Text>
+      )
+    }
+  }
+
+  return null
+}
+
+export default observer(OnAir)

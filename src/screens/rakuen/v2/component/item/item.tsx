@@ -1,0 +1,112 @@
+/*
+ * @Author: czy0729
+ * @Date: 2019-04-27 20:21:08
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-07-22 20:25:43
+ */
+import React from 'react'
+import { Flex, Touchable, UserStatus } from '@components'
+import { InView, PreventTouchPlaceholder } from '@_'
+import { getCoverMedium, getMonoCoverSmall } from '@utils'
+import { memo } from '@utils/decorators'
+import { FROZEN_FN, IMG_INFO_ONLY } from '@constants'
+import Avatar from './avatar'
+import BtnPopover from './btn-popover'
+import Content from './content'
+import IconFavor from './icon-favor'
+import Readed from './readed'
+import { COMPONENT_MAIN, DEFAULT_PROPS, ITEM_HEIGHT } from './ds'
+import { styles } from './styles'
+
+const Item = memo(
+  ({
+    index = 0,
+    avatar = '',
+    userId = '',
+    userName = '',
+    groupHref = '',
+    groupCn = '',
+    href = '',
+    title = '',
+    time = '',
+    epoch = 0,
+    topicId = 'group/0',
+    replyCount = 0,
+    isGroup = false,
+    onPress = FROZEN_FN
+  }) => {
+    let src = avatar || IMG_INFO_ONLY
+    if (src && typeof src === 'string') {
+      if (src === '/img/info_only.png') {
+        src = IMG_INFO_ONLY
+      } else if (src.includes('cover')) {
+        src = getCoverMedium(src)
+      } else if (src.includes('crt') || src.includes('prsn')) {
+        src = getMonoCoverSmall(src)
+      }
+    }
+
+    return (
+      <Readed topicId={topicId}>
+        <Flex align='start'>
+          <Flex.Item>
+            <Touchable animate onPress={onPress}>
+              <Flex align='start'>
+                <UserStatus userId={userId}>
+                  <InView style={styles.inView} index={index} y={InView.y(index, ITEM_HEIGHT)}>
+                    <Avatar
+                      src={src}
+                      name={userName}
+                      userId={userId}
+                      priority={index < 10 ? 'high' : 'normal'}
+                    />
+                  </InView>
+                </UserStatus>
+                <Flex.Item style={styles.wrap}>
+                  <Flex.Item>
+                    <Content
+                      groupCn={groupCn}
+                      title={title}
+                      time={time}
+                      epoch={epoch}
+                      topicId={topicId}
+                      replyCount={replyCount}
+                      userId={userId}
+                      userName={userName}
+                      avatar={avatar}
+                      isGroup={isGroup}
+                    />
+                  </Flex.Item>
+                </Flex.Item>
+              </Flex>
+            </Touchable>
+          </Flex.Item>
+          <BtnPopover
+            groupCn={groupCn}
+            groupHref={groupHref}
+            href={href}
+            topicId={topicId}
+            userId={userId}
+            userName={userName}
+            isGroup={isGroup}
+          />
+        </Flex>
+        <IconFavor topicId={topicId} />
+        <PreventTouchPlaceholder />
+      </Readed>
+    )
+  },
+  DEFAULT_PROPS,
+  COMPONENT_MAIN,
+  (props, prevProps, nextProps) => ({
+    ...props,
+
+    /** 减少重渲染次数: index 只用于 InView, 若之后更新比之前小, 就没有意义 */
+    index: Math.min(prevProps.index, nextProps.index),
+
+    /** 减少重渲染次数: "...19h 52m ago" => "...19h 55m ago" 只判断前几个字符 */
+    time: props.time.slice(0, 4)
+  })
+)
+
+export default Item

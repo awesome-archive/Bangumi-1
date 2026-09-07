@@ -1,0 +1,36 @@
+/*
+ * @Author: czy0729
+ * @Date: 2019-04-26 13:40:51
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-06-22 17:56:30
+ */
+import React from 'react'
+import { observer } from 'mobx-react'
+import { Component } from '@components/component'
+import { Page } from '@components/page'
+import { StoreContext } from '@stores'
+import Extra from './component/extra'
+import Tab from './component/tab'
+import Header from './header'
+import { useRakuenPage } from './hooks'
+
+import type { NavigationProps } from '@types'
+
+/** 超展开 */
+function Rakuen(props: NavigationProps) {
+  const { id } = useRakuenPage(props)
+
+  return (
+    <Component id='screen-rakuen'>
+      <StoreContext.Provider value={id}>
+        <Page>
+          <Tab />
+          <Header />
+        </Page>
+        <Extra />
+      </StoreContext.Provider>
+    </Component>
+  )
+}
+
+export default observer(Rakuen)

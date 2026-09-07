@@ -1,0 +1,133 @@
+/*
+ * @Author: czy0729
+ * @Date: 2023-04-24 14:16:51
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2025-08-15 20:35:03
+ */
+import { getTimestamp } from '@utils'
+import { fetchHTML } from '@utils/fetch'
+import { get, gets } from '@utils/kv'
+import hash from '@utils/thirdParty/hash'
+import { HTML_SUBJECT_CHARACTERS, HTML_SUBJECT_PERSONS } from '@constants'
+import { cheerioCharacters, cheerioPersons } from './common'
+import Computed from './computed'
+
+import type { SubjectId } from '@types'
+
+export default class Fetch extends Computed {
+  /** 更多角色 */
+  fetchCharacters = async (subjectId: SubjectId) => {
+    const STATE_KEY = 'characters'
+    const ITEM_KEY = subjectId
+
+    try {
+      const html = await fetchHTML({
+        url: HTML_SUBJECT_CHARACTERS(subjectId)
+      })
+
+      this.setState({
+        [STATE_KEY]: {
+          [ITEM_KEY]: {
+            list: cheerioCharacters(html),
+            pagination: {
+              page: 1,
+              pageTotal: 1
+            },
+            _loaded: getTimestamp()
+          }
+        }
+      })
+    } catch (error) {
+      this.error('fetchCharacters', error)
+    }
+
+    return this[STATE_KEY](ITEM_KEY)
+  }
+
+  /** 更多制作人员 */
+  fetchPersons = async (subjectId: SubjectId) => {
+    const STATE_KEY = 'persons'
+    const ITEM_KEY = subjectId
+
+    try {
+      const html = await fetchHTML({
+        url: HTML_SUBJECT_PERSONS(subjectId)
+      })
+
+      this.setState({
+        [STATE_KEY]: {
+          [ITEM_KEY]: {
+            list: cheerioPersons(html),
+            pagination: {
+              page: 1,
+              pageTotal: 1
+            },
+            _loaded: getTimestamp()
+          }
+        }
+      })
+    } catch (error) {
+      this.error('fetchPersons', error)
+    }
+
+    return this[STATE_KEY](ITEM_KEY)
+  }
+
+  /** 画集数 */
+  fetchPicTotal = async (name: string = '') => {
+    if (!name) return false
+
+    const STATE_KEY = 'picTotal'
+    const currentTotal = this[STATE_KEY](name)
+    if (currentTotal !== undefined) return currentTotal
+
+    let value = 0
+    try {
+      value = Number(await get(`pic_total_${name}`))
+    } catch (error) {
+      this.error('fetchPicTotal', error)
+    }
+    this.updatePicTotal(name, value)
+
+    return this[STATE_KEY](name)
+  }
+
+  /** 画集数 (批量) */
+  fetchPicTotalBatch = async (names: string[] = []) => {
+    if (!names?.length) return false
+
+    const STATE_KEY = 'picTotal'
+    const filters = names.filter(name => {
+      if (!name || this[STATE_KEY](name) !== undefined) return false
+      return true
+    })
+    if (!filters.length) return false
+
+    try {
+      const prefix = 'pic_total_'
+      const keys = filters.map(name => `${prefix}${name}`)
+      const values = await gets(keys)
+      Object.entries(values).forEach(([name, value]) => {
+        if (value) {
+          const key = name.split(prefix)?.[1]
+          if (key) this.updatePicTotal(key, value)
+        }
+      })
+    } catch (error) {
+      this.error('fetchPicTotalBatch', error)
+    }
+
+    return true
+  }
+
+  updatePicTotal = (name: string = '', value: number = 0) => {
+    const STATE_KEY = 'picTotal'
+    const ITEM_KEY = hash(name).slice(0, 4)
+    this.setState({
+      [STATE_KEY]: {
+        [ITEM_KEY]: value
+      }
+    })
+    this.save(STATE_KEY)
+  }
+}

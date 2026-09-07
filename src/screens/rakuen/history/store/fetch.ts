@@ -1,0 +1,87 @@
+/*
+ * @Author: czy0729
+ * @Date: 2024-06-05 19:42:31
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-08-31 05:19:08
+ */
+import { rakuenStore } from '@stores'
+import { getTimestamp, queue } from '@utils'
+import { getBucketId } from '@utils/bucket'
+import { logger } from '@utils/dev'
+import { collectRank } from '@utils/kv'
+import { H12 } from '@constants'
+import Computed from './computed'
+import { NAMESPACE } from './ds'
+
+import type { TimerRef, TopicId } from '@types'
+
+const loaded: Record<TopicId, true> = {}
+let topicQueueTimer: TimerRef = null
+
+export default class Fetch extends Computed {
+  /** 小组帖子列表 (我的回复跟小组是一个性质的) */
+  fetchGroup = async () => {
+    await rakuenStore.fetchGroup({
+      groupId: 'my_reply',
+      page: this.state.replyPage
+    })
+
+    if (topicQueueTimer !== null) {
+      clearTimeout(topicQueueTimer)
+    }
+    topicQueueTimer = setTimeout(() => {
+      topicQueueTimer = null
+      this.fetchTopicQueue()
+    }, 4000)
+
+    return true
+  }
+
+  /** 获取帖子内容和留言 */
+  fetchTopicQueue = async () => {
+    const topicIds = this.myReply.list.map(
+      item => item.href.replace('/group/topic/', 'group/') as TopicId
+    )
+    await queue(
+      topicIds.map(topicId => () => {
+        const last = getBucketId(topicId)
+        const key = `comments${last}` as const
+        return rakuenStore.init(key)
+      })
+    )
+
+    const now = getTimestamp()
+    const fetches = topicIds
+      .filter(topicId => {
+        if (loaded[topicId]) return false
+
+        // 请求间隔为 12 小时乘以页数
+        const { _loaded } = rakuenStore.comments(topicId)
+        if (_loaded && now - Number(_loaded) <= H12 * Number(this.state.page)) return false
+
+        loaded[topicId] = true
+        return true
+      })
+      .map(topicId => () => {
+        logger.info(NAMESPACE, 'fetchTopicQueue', topicId)
+        return rakuenStore.fetchTopic({
+          topicId
+        })
+      })
+
+    return queue(fetches)
+  }
+
+  /** 获取热门帖子 */
+  fetchCollectRank = async () => {
+    try {
+      const data = await collectRank()
+      if (Array.isArray(data?.data)) {
+        this.setState({
+          collectRank: data.data
+        })
+        this.save()
+      }
+    } catch {}
+  }
+}

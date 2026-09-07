@@ -1,0 +1,75 @@
+/*
+ * @Author: czy0729
+ * @Date: 2023-04-05 14:59:57
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-08-27 20:48:07
+ */
+import type { rakuenStore } from '@stores'
+import type { BlogId, Id, SubjectId, TopicId, ViewStyle, WithViewStyles } from '@types'
+
+type LikesList = ReturnType<typeof rakuenStore.likesList>
+
+/** 贴贴用户 */
+export type LikesUsers = {
+  username: string
+  nickname: string
+}[]
+
+/** 贴贴列表项 */
+export type LikesItem = NonNullable<LikesList>[number] & {
+  users?: LikesUsers
+}
+
+export type Props = WithViewStyles<{
+  /** 初始渲染是否显示全部 */
+  show?: boolean
+
+  /** 是否显示创建贴贴的按钮 */
+  showCreate?: boolean
+
+  /** 帖子 ID | mainId */
+  topicId: TopicId | BlogId | SubjectId
+
+  /** 楼层 ID | relatedId */
+  id: Id
+
+  /** 操作凭证 */
+  formhash?: string
+
+  /** 贴贴类型 */
+  likeType: Id
+
+  /** 默认显示贴贴数量 */
+  limit?: number
+
+  /** 偏移值 */
+  offsets?: {
+    recommandPosition?: '' | 'top' | 'bottom'
+    x?: number
+    y?: number
+  }
+
+  /** 点击按钮 */
+  onPress?: (list: LikesUsers, emoji: number) => void
+
+  /** 长按按钮 */
+  onLongPress?: (list: LikesUsers, emoji: number) => void
+
+  /** Storybook 模拟数据 */
+  storybook?: {
+    likesList: LikesList
+  }
+
+  /** 左侧渐隐遮罩附加样式 (与内部 opacity 滚动动画合并) */
+  leftMaskStyle?: ViewStyle
+
+  /** 右侧渐隐遮罩附加样式 */
+  rightMaskStyle?: ViewStyle
+}>
+
+/** 传给贴贴翻转组件和按钮的属性 */
+export type LikesPassProps = Pick<
+  Props,
+  'topicId' | 'id' | 'formhash' | 'onPress' | 'onLongPress'
+> &
+  LikesItem

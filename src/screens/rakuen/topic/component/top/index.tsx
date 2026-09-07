@@ -1,0 +1,67 @@
+/*
+ * @Author: czy0729
+ * @Date: 2019-05-01 20:14:08
+ * @Last Modified by: czy0729
+ * @Last Modified time: 2026-06-02 05:53:07
+ */
+import React from 'react'
+import { View } from 'react-native'
+import { observer } from 'mobx-react'
+import { Divider, Expand, HeaderPlaceholder, Text } from '@components'
+import { RecommendTopic } from '@_'
+import { _, useStore } from '@stores'
+import Author from './author'
+import Content from './content'
+import Ep from './ep'
+import GroupInfo from './group-info'
+import SectionTitle from './section-title'
+import Title from './title'
+import { COMPONENT } from './ds'
+import { memoStyles } from './styles'
+
+import type { Ctx } from '../../types'
+
+function Top() {
+  const { $ } = useStore<Ctx>(COMPONENT)
+
+  const styles = memoStyles()
+
+  return (
+    <>
+      <HeaderPlaceholder />
+      <View style={styles.top}>
+        <Title />
+        <GroupInfo />
+        {$.topicId.includes('group/') && <Author />}
+        {$.state.filterPost ? (
+          <Expand ratio={1.28}>
+            <Content />
+          </Expand>
+        ) : (
+          <Content />
+        )}
+        {!!$.topic.delete && (
+          <Text style={_.mb.md} size={15} lineHeight={18} bold align='center'>
+            数据库中没有查询到指定话题{'\n'}话题可能正在审核或已被删除
+          </Text>
+        )}
+        {$.isTopic && (
+          <RecommendTopic
+            visible={$.state.recommendVisible}
+            loading={$.state.recommendLoading}
+            data={$.state.recommendTopics}
+            iconSize={17}
+            onShow={$.showRecommend}
+            onHide={$.hideRecommend}
+            onLoadMore={$.fetchRecommendTopics}
+          />
+        )}
+      </View>
+      <Divider />
+      <Ep />
+      <SectionTitle />
+    </>
+  )
+}
+
+export default observer(Top)
